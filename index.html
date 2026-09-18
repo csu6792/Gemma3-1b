@@ -2,13 +2,17 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta
+    name="viewport"
+    content="width=device-width,
+             initial-scale=1,
+             viewport-fit=cover"
+>
 
-<title>iPhone Local AI Chat</title>
+<meta name="theme-color" content="#0b0f14">
+
+<title>iPhone Local AI - Qwen + Gemma</title>
 
 <style>
 * {
@@ -23,7 +27,7 @@ body {
     width: 100%;
     height: 100%;
     background: #0b0f14;
-    color: #f4f4f5;
+    color: #f5f5f5;
     font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -37,202 +41,396 @@ body {
     overflow: hidden;
 }
 
-#app {
-    height: 100dvh;
-    height: -webkit-fill-available;
-    display: flex;
-    flex-direction: column;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* =========================
-   Header
-========================= */
-
-header {
-    flex: 0 0 auto;
-    padding: 14px 16px 12px;
-    border-bottom: 1px solid #252a32;
-    background: rgba(11, 15, 20, 0.96);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-}
-
-.title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.title h1 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-}
-
-.device-badge {
-    font-size: 11px;
-    padding: 5px 8px;
-    border-radius: 999px;
-    background: #17202b;
-    color: #9ecbff;
-    white-space: nowrap;
-}
-
-.controls {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-select,
 button,
-textarea {
+select,
+textarea,
+input {
     font: inherit;
 }
 
-select {
-    width: 100%;
-    min-height: 42px;
-    border: 1px solid #343b45;
-    border-radius: 11px;
-    background: #151a21;
-    color: white;
-    padding: 0 12px;
-}
-
 button {
-    border: 0;
-    border-radius: 11px;
-    min-height: 42px;
-    padding: 0 15px;
-    background: #2d7ff9;
-    color: white;
-    font-weight: 700;
     cursor: pointer;
 }
 
 button:disabled {
-    opacity: 0.45;
+    opacity: .45;
     cursor: default;
 }
 
-/* =========================
-   Status
-========================= */
+/* =========================================================
+   APP
+========================================================= */
 
-.status {
-    margin-top: 9px;
-    min-height: 20px;
-    font-size: 12px;
-    color: #9ca3af;
-    line-height: 1.45;
+#app {
+    width: 100%;
+    height: 100dvh;
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
-.progress-wrap {
+/* =========================================================
+   HEADER
+========================================================= */
+
+header {
+    flex: 0 0 auto;
+
+    padding:
+        13px
+        14px
+        10px;
+
+    background: rgba(11,15,20,.97);
+
+    border-bottom:
+        1px solid #252b34;
+
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+}
+
+.badge {
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background: #18212c;
+    color: #8fc4ff;
+
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   MODEL
+========================================================= */
+
+.model-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+
+    gap: 8px;
+
+    margin-top: 10px;
+}
+
+select {
+    width: 100%;
+    min-height: 43px;
+
+    padding:
+        0
+        10px;
+
+    border:
+        1px solid #343c47;
+
+    border-radius: 11px;
+
+    background: #151a21;
+    color: #fff;
+
+    outline: none;
+}
+
+.primary {
+    min-height: 43px;
+
+    padding:
+        0
+        15px;
+
+    border: 0;
+    border-radius: 11px;
+
+    background: #2d7ff9;
+    color: white;
+
+    font-weight: 700;
+}
+
+/* =========================================================
+   TOKEN
+========================================================= */
+
+.token-row {
     display: none;
+
     margin-top: 8px;
+}
+
+.token-row.visible {
+    display: block;
+}
+
+.token-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #858e9a;
+    font-size: 11px;
+}
+
+.token-input {
+    width: 100%;
+
+    min-height: 40px;
+
+    padding:
+        8px
+        10px;
+
+    border:
+        1px solid #343c47;
+
+    border-radius: 10px;
+
+    background: #151a21;
+    color: #fff;
+
+    outline: none;
+}
+
+.token-help {
+    margin-top: 5px;
+
+    color: #737d89;
+
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
+    min-height: 20px;
+
+    margin-top: 8px;
+
+    color: #a2aab5;
+
+    font-size: 12px;
+    line-height: 1.45;
+
+    white-space: pre-wrap;
+}
+
+.progress {
+    display: none;
+
+    margin-top: 7px;
+}
+
+.progress.show {
+    display: block;
 }
 
 .progress-bg {
     width: 100%;
     height: 5px;
-    border-radius: 99px;
+
     overflow: hidden;
-    background: #202630;
+
+    border-radius: 999px;
+
+    background: #242b34;
 }
 
 .progress-bar {
     width: 0%;
     height: 100%;
+
     background: #2d7ff9;
-    transition: width 0.15s linear;
+
+    transition:
+        width .12s linear;
 }
 
-.progress-text {
+.progress-info {
+    display: flex;
+
+    justify-content: space-between;
+
     margin-top: 4px;
-    font-size: 11px;
-    color: #7d8794;
+
+    color: #747e8a;
+
+    font-size: 10px;
 }
 
-/* =========================
-   Chat
-========================= */
+/* =========================================================
+   WARNING
+========================================================= */
+
+.warning {
+    display: none;
+
+    margin-top: 7px;
+
+    padding:
+        8px
+        9px;
+
+    border-radius: 9px;
+
+    background: #241f18;
+
+    color: #d6c09b;
+
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.warning.show {
+    display: block;
+}
+
+/* =========================================================
+   CHAT
+========================================================= */
 
 #messages {
     flex: 1 1 auto;
+
     min-height: 0;
+
     overflow-y: auto;
+
     -webkit-overflow-scrolling: touch;
-    padding: 18px 14px 20px;
+
+    padding:
+        16px
+        13px
+        20px;
 }
 
 .message {
-    max-width: 88%;
-    margin-bottom: 14px;
-    padding: 11px 13px;
-    border-radius: 15px;
-    line-height: 1.6;
+    max-width: 90%;
+
+    margin-bottom: 12px;
+
+    padding:
+        10px
+        12px;
+
+    border-radius: 14px;
+
     font-size: 15px;
+    line-height: 1.6;
+
     white-space: pre-wrap;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .message.user {
     margin-left: auto;
-    background: #1f5fbf;
+
+    background: #205fb8;
+
     border-bottom-right-radius: 5px;
 }
 
 .message.ai {
     margin-right: auto;
+
     background: #171c23;
-    border: 1px solid #272e38;
+
+    border:
+        1px solid #282f39;
+
     border-bottom-left-radius: 5px;
 }
 
 .message.system {
     max-width: 100%;
-    margin: 0 auto 12px;
+
+    margin-left: auto;
+    margin-right: auto;
+
     background: transparent;
-    color: #8993a0;
-    font-size: 12px;
+
+    color: #7d8793;
+
+    font-size: 11px;
+
     text-align: center;
 }
 
-/* =========================
-   Composer
-========================= */
+/* =========================================================
+   COMPOSER
+========================================================= */
 
 .composer {
     flex: 0 0 auto;
-    padding: 10px 12px;
-    border-top: 1px solid #252a32;
-    background: rgba(11, 15, 20, 0.97);
+
+    padding:
+        9px
+        11px
+        10px;
+
+    background: rgba(11,15,20,.98);
+
+    border-top:
+        1px solid #252b34;
 }
 
 .composer-row {
     display: flex;
-    gap: 8px;
+
     align-items: flex-end;
+
+    gap: 7px;
 }
 
 textarea {
     flex: 1;
+
     min-width: 0;
-    max-height: 130px;
+
     min-height: 44px;
+    max-height: 130px;
+
     resize: none;
-    border: 1px solid #343b45;
+
+    padding:
+        10px
+        11px;
+
+    border:
+        1px solid #343c47;
+
     border-radius: 13px;
-    padding: 11px 12px;
+
     background: #151a21;
     color: white;
+
     outline: none;
-    line-height: 1.4;
+
+    line-height: 1.45;
 }
 
 textarea:focus {
@@ -240,42 +438,48 @@ textarea:focus {
 }
 
 .send {
-    min-width: 64px;
+    min-width: 62px;
+    min-height: 44px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background: #2d7ff9;
+
+    color: white;
+
+    font-weight: 700;
 }
 
-/* =========================
-   iPhone warning
-========================= */
+/* =========================================================
+   iPHONE
+========================================================= */
 
-.iphone-tip {
-    display: none;
-    margin-top: 7px;
-    padding: 8px 10px;
-    border-radius: 9px;
-    background: #1c2631;
-    color: #b8c7d9;
-    font-size: 11px;
-    line-height: 1.5;
+body.ios .badge {
+    background: #18251d;
+    color: #9ce2ad;
 }
 
-body.ios .iphone-tip {
-    display: block;
-}
+/* =========================================================
+   SMALL SCREEN
+========================================================= */
 
-/* =========================
-   Small screens
-========================= */
+@media (max-width: 380px) {
 
-@media (max-width: 500px) {
-    header {
-        padding-left: 12px;
-        padding-right: 12px;
+    h1 {
+        font-size: 16px;
     }
 
     .message {
-        max-width: 92%;
+        max-width: 94%;
+    }
+
+    .primary {
+        padding: 0 12px;
     }
 }
+
 </style>
 </head>
 
@@ -283,62 +487,156 @@ body.ios .iphone-tip {
 
 <div id="app">
 
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
     <header>
 
-        <div class="title">
-            <h1>📱 Local AI Chat</h1>
-            <div id="deviceBadge" class="device-badge">
+        <div class="top">
+
+            <h1>
+                📱 Local AI
+            </h1>
+
+            <div
+                id="deviceBadge"
+                class="badge"
+            >
                 Browser
             </div>
+
         </div>
 
-        <div class="controls">
+
+        <!-- MODEL -->
+
+        <div class="model-row">
 
             <select id="modelSelect">
-                <option value="qwen05">
-                    Qwen 2.5 0.5B — iPhone 推薦
+
+                <option value="qwen">
+                    Qwen 2.5 0.5B · 547 MB · iPhone 推薦
                 </option>
 
-                <option value="gemma1b">
-                    Gemma 3 1B — 較大
+                <option value="gemma">
+                    Gemma 3 1B · 700 MB
                 </option>
+
             </select>
 
-            <button id="loadBtn">
+
+            <button
+                id="loadBtn"
+                class="primary"
+            >
                 載入
             </button>
 
         </div>
 
-        <div id="status" class="status">
-            尚未載入模型
+
+        <!-- GEMMA TOKEN -->
+
+        <div
+            id="tokenRow"
+            class="token-row"
+        >
+
+            <label
+                class="token-label"
+                for="tokenInput"
+            >
+                Hugging Face Token（Gemma 必要時使用）
+            </label>
+
+            <input
+                id="tokenInput"
+                class="token-input"
+                type="password"
+                placeholder="hf_..."
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+
+            <div class="token-help">
+                Token 只用於本次下載，不寫入模型檔案或 OPFS。
+                Qwen 不需要 Token。
+            </div>
+
         </div>
 
-        <div id="progressWrap" class="progress-wrap">
+
+        <!-- STATUS -->
+
+        <div
+            id="status"
+            class="status"
+        >
+            準備完成。
+        </div>
+
+
+        <!-- PROGRESS -->
+
+        <div
+            id="progress"
+            class="progress"
+        >
+
             <div class="progress-bg">
-                <div id="progressBar" class="progress-bar"></div>
+
+                <div
+                    id="progressBar"
+                    class="progress-bar"
+                ></div>
+
             </div>
 
-            <div id="progressText" class="progress-text">
-                準備下載...
+            <div class="progress-info">
+
+                <span id="progressLeft">
+                    0 MB / ?
+                </span>
+
+                <span id="progressRight">
+                    --
+                </span>
+
             </div>
+
         </div>
 
-        <div class="iphone-tip">
-            iPhone 模式：優先使用較小模型、避免一次建立多份模型副本，
-            並限制輸出長度以降低 Safari 記憶體壓力。
-        </div>
+
+        <!-- WARNING -->
+
+        <div
+            id="warning"
+            class="warning"
+        ></div>
 
     </header>
+
+
+    <!-- =====================================================
+         CHAT
+    ====================================================== -->
 
     <main id="messages">
 
         <div class="message system">
-            選擇模型後按「載入」。模型會保存在瀏覽器 Cache，
-            下次開啟可直接使用。
+            選擇 Qwen 或 Gemma，然後按「載入」。
+            模型會下載到此網站自己的 OPFS 儲存空間。
         </div>
 
     </main>
+
+
+    <!-- =====================================================
+         COMPOSER
+    ====================================================== -->
 
     <div class="composer">
 
@@ -368,52 +666,77 @@ body.ios .iphone-tip {
 
 </div>
 
+
 <script type="module">
 
 /* ============================================================
-   MediaPipe Tasks GenAI
+   MediaPipe Tasks GenAI 0.10.29
 ============================================================ */
 
 import {
     FilesetResolver,
     LlmInference
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
+} from
+"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
 
 
 /* ============================================================
-   Model definitions
+   MODEL CONFIG
 ============================================================ */
 
 const MODELS = {
 
-    qwen05: {
-        name: "Qwen 2.5 0.5B",
+    qwen: {
 
-        url:
-            "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/" +
+        name:
+            "Qwen 2.5 0.5B",
+
+        file:
             "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
 
-        approxMB: 547,
+        url:
+            "https://huggingface.co/litert-community/" +
+            "Qwen2.5-0.5B-Instruct/resolve/main/" +
+            "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
 
-        iphoneRecommended: true,
+        expectedMB:
+            547,
 
-        maxTokensDesktop: 384,
-        maxTokensIOS: 256
+        iphone:
+            true,
+
+        maxTokensIOS:
+            256,
+
+        maxTokensDesktop:
+            384
     },
 
-    gemma1b: {
-        name: "Gemma 3 1B",
 
-        url:
-            "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/" +
+    gemma: {
+
+        name:
+            "Gemma 3 1B",
+
+        file:
             "gemma3-1b-it-int4-web.task",
 
-        approxMB: 700,
+        url:
+            "https://huggingface.co/litert-community/" +
+            "Gemma3-1B-IT/resolve/main/" +
+            "gemma3-1b-it-int4-web.task",
 
-        iphoneRecommended: false,
+        expectedMB:
+            700,
 
-        maxTokensDesktop: 384,
-        maxTokensIOS: 192
+        iphone:
+            false,
+
+        maxTokensIOS:
+            192,
+
+        maxTokensDesktop:
+            384
     }
 
 };
@@ -441,59 +764,83 @@ const messages =
 const statusEl =
     document.getElementById("status");
 
-const progressWrap =
-    document.getElementById("progressWrap");
+const progressEl =
+    document.getElementById("progress");
 
 const progressBar =
     document.getElementById("progressBar");
 
-const progressText =
-    document.getElementById("progressText");
+const progressLeft =
+    document.getElementById("progressLeft");
+
+const progressRight =
+    document.getElementById("progressRight");
+
+const warningEl =
+    document.getElementById("warning");
+
+const tokenRow =
+    document.getElementById("tokenRow");
+
+const tokenInput =
+    document.getElementById("tokenInput");
 
 const deviceBadge =
     document.getElementById("deviceBadge");
 
 
 /* ============================================================
-   Device detection
+   DEVICE
 ============================================================ */
 
 const isIOS =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    /iPhone|iPad|iPod/.test(
+        navigator.userAgent
+    ) ||
     (
         navigator.platform === "MacIntel" &&
         navigator.maxTouchPoints > 1
     );
 
 const isSafari =
-    /^((?!chrome|android).)*safari/i.test(
+    /Safari/i.test(
+        navigator.userAgent
+    ) &&
+    !/Chrome|CriOS|Android/i.test(
         navigator.userAgent
     );
 
-const hasWebGPU =
-    !!navigator.gpu;
 
 if (isIOS) {
-    document.body.classList.add("ios");
-    deviceBadge.textContent = "iPhone / iPad";
-} else if (hasWebGPU) {
-    deviceBadge.textContent = "WebGPU";
+
+    document.body.classList.add(
+        "ios"
+    );
+
+    deviceBadge.textContent =
+        "iPhone / iPad";
+
 } else {
-    deviceBadge.textContent = "Web";
+
+    deviceBadge.textContent =
+        "WebGPU";
 }
 
 
 /* ============================================================
-   iPhone default model
+   DEFAULT MODEL
 ============================================================ */
 
 if (isIOS) {
-    modelSelect.value = "qwen05";
+
+    modelSelect.value =
+        "qwen";
+
 }
 
 
 /* ============================================================
-   LiteRT state
+   STATE
 ============================================================ */
 
 let llm = null;
@@ -506,33 +853,355 @@ let isLoading = false;
 
 let isGenerating = false;
 
+let abortController = null;
+
 
 /* ============================================================
-   Cache
+   OPFS
 ============================================================ */
 
-const CACHE_NAME =
-    "local-ai-model-cache-v2";
+let opfsRoot = null;
+
+
+/*
+ * OPFS is deliberately used instead of:
+ *
+ * - Cache API
+ * - IndexedDB Blob
+ * - chunks[]
+ *
+ * because we want the download to be written progressively
+ * to browser-managed storage.
+ */
+
+async function getOPFSRoot() {
+
+    if (
+        !navigator.storage ||
+        !navigator.storage.getDirectory
+    ) {
+
+        throw new Error(
+            "此 Safari 不支援 OPFS。\n" +
+            "請更新至 iOS 16.4 以上；" +
+            "若要使用串流檔案下載，建議 iOS 26。"
+        );
+    }
+
+
+    if (!opfsRoot) {
+
+        opfsRoot =
+            await navigator.storage.getDirectory();
+    }
+
+
+    return opfsRoot;
+}
 
 
 /* ============================================================
-   Messages
+   OPFS FILE
+============================================================ */
+
+async function getModelFileHandle(
+    model
+) {
+
+    const root =
+        await getOPFSRoot();
+
+    return await root.getFileHandle(
+        model.file,
+        {
+            create: true
+        }
+    );
+}
+
+
+/* ============================================================
+   DELETE MODEL
+============================================================ */
+
+async function deleteModelFile(
+    model
+) {
+
+    try {
+
+        const root =
+            await getOPFSRoot();
+
+        await root.removeEntry(
+            model.file
+        );
+
+    } catch (error) {
+
+        /*
+         * Not found is harmless.
+         */
+
+        console.log(
+            "delete model:",
+            error
+        );
+    }
+}
+
+
+/* ============================================================
+   GET SAVED FILE
+============================================================ */
+
+async function getSavedFile(
+    model
+) {
+
+    try {
+
+        const root =
+            await getOPFSRoot();
+
+        const handle =
+            await root.getFileHandle(
+                model.file
+            );
+
+        const file =
+            await handle.getFile();
+
+        /*
+         * Avoid accepting a zero-byte partial file.
+         */
+
+        if (
+            !file.size ||
+            file.size < 1024 * 1024
+        ) {
+
+            return null;
+        }
+
+        return file;
+
+    } catch (error) {
+
+        return null;
+    }
+}
+
+
+/* ============================================================
+   FORMAT
+============================================================ */
+
+function mb(
+    bytes
+) {
+
+    return (
+        bytes /
+        1024 /
+        1024
+    ).toFixed(1);
+}
+
+
+function formatSpeed(
+    bytesPerSecond
+) {
+
+    if (
+        !bytesPerSecond ||
+        !Number.isFinite(bytesPerSecond)
+    ) {
+
+        return "--";
+    }
+
+
+    if (
+        bytesPerSecond >
+        1024 * 1024
+    ) {
+
+        return (
+            (
+                bytesPerSecond /
+                1024 /
+                1024
+            ).toFixed(1)
+            +
+            " MB/s"
+        );
+
+    }
+
+
+    return (
+        (
+            bytesPerSecond /
+            1024
+        ).toFixed(0)
+        +
+        " KB/s"
+    );
+}
+
+
+/* ============================================================
+   STATUS
+============================================================ */
+
+function setStatus(
+    text
+) {
+
+    statusEl.textContent =
+        text;
+}
+
+
+/* ============================================================
+   WARNING
+============================================================ */
+
+function showWarning(
+    text
+) {
+
+    warningEl.textContent =
+        text;
+
+    warningEl.classList.add(
+        "show"
+    );
+}
+
+
+function hideWarning() {
+
+    warningEl.textContent =
+        "";
+
+    warningEl.classList.remove(
+        "show"
+    );
+}
+
+
+/* ============================================================
+   PROGRESS
+============================================================ */
+
+function showProgress() {
+
+    progressEl.classList.add(
+        "show"
+    );
+}
+
+
+function hideProgress() {
+
+    progressEl.classList.remove(
+        "show"
+    );
+
+    progressBar.style.width =
+        "0%";
+
+    progressLeft.textContent =
+        "0 MB / ?";
+
+    progressRight.textContent =
+        "--";
+}
+
+
+function updateProgress(
+    loaded,
+    total,
+    startedAt
+) {
+
+    const percent =
+        total > 0
+            ? (
+                loaded /
+                total *
+                100
+            )
+            : 0;
+
+
+    if (total > 0) {
+
+        progressBar.style.width =
+            Math.min(
+                100,
+                percent
+            ) +
+            "%";
+
+        progressLeft.textContent =
+            `${mb(loaded)} MB / ${mb(total)} MB`;
+
+    } else {
+
+        progressBar.style.width =
+            "0%";
+
+        progressLeft.textContent =
+            `${mb(loaded)} MB / ?`;
+    }
+
+
+    const elapsed =
+        (
+            performance.now() -
+            startedAt
+        ) /
+        1000;
+
+
+    const speed =
+        elapsed > 0
+            ? loaded / elapsed
+            : 0;
+
+
+    progressRight.textContent =
+        formatSpeed(speed);
+}
+
+
+/* ============================================================
+   MESSAGE
 ============================================================ */
 
 function addMessage(
     text,
-    type = "ai"
+    type
 ) {
 
     const el =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     el.className =
-        `message ${type}`;
+        "message " +
+        type;
 
-    el.textContent = text;
+    el.textContent =
+        text;
 
-    messages.appendChild(el);
+    messages.appendChild(
+        el
+    );
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -542,296 +1211,546 @@ function addMessage(
 
 
 /* ============================================================
-   Status
-============================================================ */
-
-function setStatus(text) {
-    statusEl.textContent = text;
-}
-
-
-/* ============================================================
-   Progress
-============================================================ */
-
-function showProgress() {
-    progressWrap.style.display = "block";
-}
-
-function hideProgress() {
-    progressWrap.style.display = "none";
-}
-
-function setProgress(
-    percent,
-    text
-) {
-
-    progressBar.style.width =
-        `${Math.max(0, Math.min(100, percent))}%`;
-
-    progressText.textContent =
-        text || `${percent}%`;
-}
-
-
-/* ============================================================
-   WebGPU test
+   CHECK WEBGPU
 ============================================================ */
 
 async function checkWebGPU() {
 
     if (!navigator.gpu) {
+
         throw new Error(
-            "這個瀏覽器沒有 WebGPU。請更新 iPhone / Safari。"
+            "此瀏覽器沒有 WebGPU。\n" +
+            "請使用支援 WebGPU 的新版 Safari。"
         );
     }
 
-    let adapter = null;
 
-    try {
-        adapter =
-            await navigator.gpu.requestAdapter();
-    } catch (e) {
-        adapter = null;
-    }
+    const adapter =
+        await navigator.gpu.requestAdapter();
+
 
     if (!adapter) {
+
         throw new Error(
-            "Safari 找不到可用的 WebGPU GPU Adapter。"
+            "Safari 找不到可用的 GPU Adapter。"
         );
     }
+
 
     return true;
 }
 
 
 /* ============================================================
-   Cache lookup
+   CHECK STORAGE
 ============================================================ */
 
-async function getCachedModel(url) {
+async function checkStorage(
+    expectedBytes
+) {
 
-    if (!("caches" in window)) {
-        return null;
+    if (
+        !navigator.storage ||
+        !navigator.storage.estimate
+    ) {
+
+        return;
     }
+
 
     try {
 
-        const cache =
-            await caches.open(CACHE_NAME);
+        const estimate =
+            await navigator.storage.estimate();
 
-        const response =
-            await cache.match(url);
+        const available =
+            (
+                estimate.quota || 0
+            ) -
+            (
+                estimate.usage || 0
+            );
 
-        if (!response) {
-            return null;
+
+        /*
+         * Need some headroom.
+         */
+
+        const required =
+            expectedBytes +
+            150 * 1024 * 1024;
+
+
+        if (
+            available > 0 &&
+            available < required
+        ) {
+
+            throw new Error(
+                `瀏覽器可用儲存空間可能不足。\n` +
+                `模型約 ${mb(expectedBytes)} MB，` +
+                `建議至少保留 ${mb(required)} MB。`
+            );
         }
-
-        if (!response.ok) {
-            return null;
-        }
-
-        return response;
 
     } catch (error) {
 
-        console.warn(
-            "Cache read failed:",
-            error
-        );
+        if (
+            error instanceof Error &&
+            error.message.includes(
+                "儲存空間"
+            )
+        ) {
 
-        return null;
+            throw error;
+        }
+
+        /*
+         * estimate itself can fail.
+         * Do not block the model.
+         */
     }
 }
 
 
 /* ============================================================
-   Download model
+   REQUEST PERSISTENT STORAGE
 ============================================================ */
 
-async function downloadModel(
+async function requestPersistentStorage() {
+
+    if (
+        navigator.storage &&
+        navigator.storage.persist
+    ) {
+
+        try {
+
+            await navigator.storage.persist();
+
+        } catch (error) {
+
+            console.log(
+                "persist:",
+                error
+            );
+        }
+    }
+}
+
+
+/* ============================================================
+   DOWNLOAD TO OPFS
+============================================================ */
+
+async function downloadToOPFS(
     model
 ) {
 
-    setStatus(
-        `下載 ${model.name}...`
-    );
+    /*
+     * Get HF token only when needed.
+     */
 
-    showProgress();
+    let token =
+        tokenInput.value.trim();
 
-    setProgress(
-        0,
-        `準備下載 ${model.approxMB} MB 左右`
-    );
+
+    const headers = {};
+
+
+    if (token) {
+
+        headers.Authorization =
+            "Bearer " +
+            token;
+    }
 
 
     /*
-     * IMPORTANT:
-     *
-     * 不使用：
-     *
-     * const chunks = [];
-     *
-     * reader.read()
-     *
-     * chunks.push(...)
-     *
-     * 因為 iPhone Safari 會因此在 JS heap
-     * 留住大量 Uint8Array。
-     *
-     * 這裡讓瀏覽器自己處理 Response body。
+     * Prepare file.
      */
 
-    const response =
-        await fetch(
-            model.url,
+    const root =
+        await getOPFSRoot();
+
+
+    /*
+     * Remove old partial file first.
+     */
+
+    try {
+
+        await root.removeEntry(
+            model.file
+        );
+
+    } catch (error) {
+        // Doesn't exist.
+    }
+
+
+    const handle =
+        await root.getFileHandle(
+            model.file,
             {
-                method: "GET",
-                mode: "cors",
-                credentials: "omit",
-                cache: "no-store"
+                create: true
             }
         );
 
 
-    if (!response.ok) {
+    /*
+     * Safari 26 / modern browsers:
+     *
+     * createWritable()
+     *
+     * writes directly into OPFS.
+     */
+
+    if (
+        typeof handle.createWritable !==
+        "function"
+    ) {
 
         throw new Error(
-            `模型下載失敗：HTTP ${response.status}`
+            "目前 Safari 沒有 FileSystemWritableFileStream。\n" +
+            "請使用 iOS 26 / Safari 26 以上。"
         );
     }
 
 
-    /*
-     * 優先讓 Cache Storage 保存 Response。
-     *
-     * clone() 不會建立 JS chunks[]。
-     */
-
-    if ("caches" in window) {
-
-        try {
-
-            const cache =
-                await caches.open(CACHE_NAME);
-
-            /*
-             * 不阻塞整個模型初始化。
-             *
-             * Cache 寫入在背景進行。
-             */
-
-            cache.put(
-                model.url,
-                response.clone()
-            ).catch(
-                err =>
-                    console.warn(
-                        "Cache write failed:",
-                        err
-                    )
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "Cache open failed:",
-                error
-            );
-        }
-    }
+    let writable = null;
 
 
-    /*
-     * 直接由 browser 建立 Blob。
-     *
-     * 不使用 chunks[]。
-     */
+    try {
 
-    const blob =
-        await response.blob();
-
-
-    hideProgress();
-
-    return blob;
-}
-
-
-/* ============================================================
-   Load model from Cache or network
-============================================================ */
-
-async function getModelBlob(model) {
-
-    /*
-     * 1. Cache
-     */
-
-    const cached =
-        await getCachedModel(
-            model.url
-        );
-
-    if (cached) {
+        /*
+         * Request model.
+         */
 
         setStatus(
-            `${model.name} 已存在本機 Cache，準備啟動...`
+            `正在連線 Hugging Face...\n${model.name}`
         );
+
+
+        abortController =
+            new AbortController();
+
+
+        const response =
+            await fetch(
+                model.url,
+                {
+                    method: "GET",
+
+                    mode: "cors",
+
+                    credentials: "omit",
+
+                    headers,
+
+                    signal:
+                        abortController.signal
+                }
+            );
+
+
+        /*
+         * Clear token from local variable.
+         */
+
+        token = "";
+
+
+        /*
+         * HTTP error.
+         */
+
+        if (!response.ok) {
+
+            if (
+                response.status === 401 ||
+                response.status === 403
+            ) {
+
+                throw new Error(
+                    "Hugging Face 拒絕存取模型。\n" +
+                    "Gemma 需要先在 Hugging Face 接受 Gemma license，" +
+                    "並提供有效的 hf_ Token。"
+                );
+            }
+
+
+            throw new Error(
+                `下載失敗：HTTP ${response.status}`
+            );
+        }
+
+
+        if (!response.body) {
+
+            throw new Error(
+                "瀏覽器沒有提供 ReadableStream，無法進行穩定串流下載。"
+            );
+        }
+
+
+        /*
+         * Content-Length
+         */
+
+        const total =
+            Number(
+                response.headers.get(
+                    "content-length"
+                )
+            ) || 0;
+
+
+        if (total > 0) {
+
+            await checkStorage(
+                total
+            );
+
+        } else {
+
+            await checkStorage(
+                model.expectedMB *
+                1024 *
+                1024
+            );
+        }
+
+
+        /*
+         * Create OPFS writable stream.
+         */
+
+        writable =
+            await handle.createWritable();
+
+
+        const reader =
+            response.body.getReader();
+
+
+        const startedAt =
+            performance.now();
+
+
+        let loaded = 0;
+
+
+        showProgress();
+
+
+        updateProgress(
+            loaded,
+            total,
+            startedAt
+        );
+
+
+        setStatus(
+            `正在下載 ${model.name}...`
+        );
+
+
+        /*
+         * IMPORTANT:
+         *
+         * 每次只保留目前這一個 chunk。
+         *
+         * 不建立：
+         *
+         * const chunks = [];
+         *
+         */
+
+        while (true) {
+
+            const {
+                value,
+                done
+            } =
+                await reader.read();
+
+
+            if (done) {
+                break;
+            }
+
+
+            if (value) {
+
+                await writable.write(
+                    value
+                );
+
+                loaded +=
+                    value.byteLength;
+
+
+                updateProgress(
+                    loaded,
+                    total,
+                    startedAt
+                );
+            }
+        }
+
+
+        /*
+         * Finish file.
+         */
+
+        await writable.close();
+
+        writable = null;
+
+
+        /*
+         * Verify file size.
+         */
+
+        const finalFile =
+            await handle.getFile();
+
+
+        if (
+            finalFile.size <
+            1024 * 1024
+        ) {
+
+            throw new Error(
+                "下載完成但檔案大小異常。"
+            );
+        }
+
+
+        hideProgress();
+
+
+        setStatus(
+            `${model.name} 下載完成。\n` +
+            `${mb(finalFile.size)} MB`
+        );
+
+
+        /*
+         * Clear token input after successful download.
+         *
+         * This also avoids keeping it in the DOM.
+         */
+
+        tokenInput.value = "";
+
+
+        return finalFile;
+
+
+    } catch (error) {
+
+        /*
+         * Abort / network failure / Safari termination.
+         */
+
+        if (writable) {
+
+            try {
+
+                await writable.abort();
+
+            } catch (e) {}
+        }
+
+
+        /*
+         * Delete incomplete file.
+         */
 
         try {
 
-            const blob =
-                await cached.blob();
-
-            return blob;
-
-        } catch (error) {
-
-            console.warn(
-                "Cached blob failed:",
-                error
+            await root.removeEntry(
+                model.file
             );
-        }
+
+        } catch (e) {}
+
+
+        throw error;
+
+    } finally {
+
+        abortController = null;
     }
-
-
-    /*
-     * 2. Download
-     */
-
-    return await downloadModel(model);
 }
 
 
 /* ============================================================
-   Release old model
+   GET MODEL FILE
 ============================================================ */
 
-async function releaseCurrentModel() {
+async function getModelFile(
+    model
+) {
+
+    /*
+     * First check OPFS.
+     */
+
+    const existing =
+        await getSavedFile(
+            model
+        );
+
+
+    if (existing) {
+
+        setStatus(
+            `${model.name} 已存在於本機。\n` +
+            `${mb(existing.size)} MB`
+        );
+
+        return existing;
+    }
+
+
+    /*
+     * Otherwise download.
+     */
+
+    return await downloadToOPFS(
+        model
+    );
+}
+
+
+/* ============================================================
+   RELEASE MODEL
+============================================================ */
+
+async function releaseModel() {
 
     sendBtn.disabled = true;
+
 
     if (llm) {
 
         try {
 
-            /*
-             * 不同版本 API 行為可能不同。
-             * 有 close 就使用 close。
-             */
-
             if (
-                typeof llm.close === "function"
+                typeof llm.close ===
+                "function"
             ) {
+
                 await llm.close();
             }
 
         } catch (error) {
 
             console.warn(
-                "LLM close warning:",
+                "LLM close:",
                 error
             );
         }
@@ -840,74 +1759,93 @@ async function releaseCurrentModel() {
     }
 
 
+    currentModelKey = null;
+
+
     /*
-     * 釋放 Object URL
+     * Release Blob URL.
      */
 
     if (currentObjectURL) {
 
         try {
+
             URL.revokeObjectURL(
                 currentObjectURL
             );
-        } catch (e) {}
+
+        } catch (error) {}
 
         currentObjectURL = null;
     }
 
 
-    currentModelKey = null;
-
-
     /*
-     * 給 Safari 一點時間釋放 WebAssembly /
-     * GPU / Blob 資源。
+     * Give Safari/WebKit a little time
+     * to release WASM/GPU resources.
      */
 
     await new Promise(
         resolve =>
-            setTimeout(resolve, 150)
+            setTimeout(
+                resolve,
+                250
+            )
     );
 }
 
 
 /* ============================================================
-   Create LLM
+   INITIALIZE LLM
 ============================================================ */
 
-async function createLLM(
+async function initializeModel(
     model,
-    blob
+    file
 ) {
 
     setStatus(
-        `${model.name} 正在啟動 WebGPU...`
+        `${model.name} 準備啟動 WebGPU...`
     );
 
 
     /*
-     * Blob URL
+     * IMPORTANT:
+     *
+     * File comes from OPFS.
+     *
+     * createObjectURL(File) does not create
+     * another JavaScript Uint8Array copy.
      */
 
     currentObjectURL =
-        URL.createObjectURL(blob);
-
-
-    /*
-     * Blob 本身不再需要由 JS 保留。
-     */
-
-    blob = null;
-
-
-    const wasmFileset =
-        await FilesetResolver.forGenAiTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm"
+        URL.createObjectURL(
+            file
         );
 
 
     /*
-     * iPhone 使用比較小的 maxTokens。
+     * Release local File reference
+     * as soon as URL has been created.
+     */
+
+    file = null;
+
+
+    setStatus(
+        `${model.name} 初始化 LiteRT...`
+    );
+
+
+    const genai =
+        await FilesetResolver.forGenAiTasks(
+            "https://cdn.jsdelivr.net/npm/" +
+            "@mediapipe/tasks-genai@0.10.29/wasm"
+        );
+
+
+    /*
+     * iPhone gets shorter generation.
      */
 
     const maxTokens =
@@ -918,9 +1856,11 @@ async function createLLM(
 
     llm =
         await LlmInference.createFromOptions(
-            wasmFileset,
+            genai,
             {
+
                 baseOptions: {
+
                     modelAssetPath:
                         currentObjectURL,
 
@@ -928,10 +1868,16 @@ async function createLLM(
                         "GPU"
                 },
 
-                maxTokens,
+
+                maxTokens:
+
+
+                    maxTokens,
+
 
                 temperature:
                     0.7,
+
 
                 topK:
                     40
@@ -940,23 +1886,27 @@ async function createLLM(
 
 
     currentModelKey =
-        Object.keys(MODELS)
-            .find(
-                key =>
-                    MODELS[key] === model
-            );
+        Object.keys(
+            MODELS
+        ).find(
+            key =>
+                MODELS[key] ===
+                model
+        );
 
 
     setStatus(
-        `${model.name} 已載入，可以開始聊天。`
+        `${model.name} 已啟動，可以開始聊天。`
     );
 
-    sendBtn.disabled = false;
+
+    sendBtn.disabled =
+        false;
 }
 
 
 /* ============================================================
-   Load selected model
+   LOAD SELECTED MODEL
 ============================================================ */
 
 async function loadSelectedModel() {
@@ -965,11 +1915,14 @@ async function loadSelectedModel() {
         return;
     }
 
+
     if (isGenerating) {
+
         addMessage(
             "目前正在產生回答，請稍候。",
             "system"
         );
+
         return;
     }
 
@@ -977,8 +1930,10 @@ async function loadSelectedModel() {
     const key =
         modelSelect.value;
 
+
     const model =
         MODELS[key];
+
 
     if (!model) {
         return;
@@ -986,25 +1941,28 @@ async function loadSelectedModel() {
 
 
     /*
-     * iPhone + 大模型警告
+     * iPhone Gemma warning.
      */
 
     if (
         isIOS &&
-        !model.iphoneRecommended
+        key === "gemma"
     ) {
 
         const ok =
             confirm(
-                "這個模型比較大，在 iPhone Safari 上記憶體壓力較高。\n\n" +
-                "建議使用 Qwen 0.5B。\n\n" +
-                "仍然要載入 Gemma 3 1B 嗎？"
+                "Gemma 3 1B 約 700 MB。\n\n" +
+                "iPhone Safari 的記憶體壓力會比 Qwen 0.5B 高。\n\n" +
+                "仍然要載入 Gemma 嗎？"
             );
+
 
         if (!ok) {
 
             modelSelect.value =
-                "qwen05";
+                "qwen";
+
+            updateTokenUI();
 
             return;
         }
@@ -1013,14 +1971,35 @@ async function loadSelectedModel() {
 
     isLoading = true;
 
-    loadBtn.disabled = true;
+    loadBtn.disabled =
+        true;
 
-    modelSelect.disabled = true;
+    modelSelect.disabled =
+        true;
 
-    sendBtn.disabled = true;
+    sendBtn.disabled =
+        true;
+
+    hideWarning();
 
 
     try {
+
+        /*
+         * Secure context
+         */
+
+        if (
+            !window.isSecureContext
+        ) {
+
+            throw new Error(
+                "此頁面不是 Secure Context。\n\n" +
+                "請使用 HTTPS 網站開啟這個 HTML。\n" +
+                "不要直接用 file:// 開啟。"
+            );
+        }
+
 
         /*
          * WebGPU
@@ -1034,45 +2013,50 @@ async function loadSelectedModel() {
 
 
         /*
-         * 釋放舊模型
+         * OPFS
+         */
+
+        await getOPFSRoot();
+
+
+        /*
+         * Persistent storage
+         */
+
+        await requestPersistentStorage();
+
+
+        /*
+         * Release previous model.
          */
 
         if (llm) {
 
             setStatus(
-                "釋放上一個模型..."
+                "正在釋放上一個模型..."
             );
 
-            await releaseCurrentModel();
+            await releaseModel();
         }
 
 
         /*
-         * 取得 Blob
+         * Get model file.
          */
 
-        const blob =
-            await getModelBlob(
+        const file =
+            await getModelFile(
                 model
             );
 
 
         /*
-         * 啟動模型
+         * Initialize.
          */
 
-        await createLLM(
+        await initializeModel(
             model,
-            blob
-        );
-
-
-        /*
-         * 強制移除 JS 參照
-         */
-
-        setStatus(
-            `${model.name} 已就緒。`
+            file
         );
 
 
@@ -1082,50 +2066,81 @@ async function loadSelectedModel() {
             error
         );
 
+
         hideProgress();
 
-        await releaseCurrentModel();
 
-
-        let message =
-            error?.message ||
-            String(error);
-
+        /*
+         * If aborted, show friendly message.
+         */
 
         if (
-            message.includes("401") ||
-            message.includes("403")
+            error &&
+            error.name ===
+            "AbortError"
         ) {
 
-            message +=
-                "\n\n如果是 Gemma，請確認 Hugging Face 已接受 Gemma license。";
+            setStatus(
+                "下載已取消。"
+            );
+
+        } else {
+
+            setStatus(
+                "模型載入失敗"
+            );
+
+
+            addMessage(
+                "❌ 模型載入失敗\n\n" +
+                (
+                    error?.message ||
+                    String(error)
+                ),
+                "system"
+            );
         }
 
 
-        addMessage(
-            "模型載入失敗：\n" +
-            message,
-            "system"
-        );
-
-        setStatus(
-            "模型載入失敗"
-        );
+        await releaseModel();
 
 
     } finally {
 
         isLoading = false;
 
-        loadBtn.disabled = false;
+        loadBtn.disabled =
+            false;
 
-        modelSelect.disabled = false;
+        modelSelect.disabled =
+            false;
+
+        abortController = null;
     }
 }
 
 
 /* ============================================================
-   Generate
+   CANCEL DOWNLOAD
+============================================================ */
+
+function cancelDownload() {
+
+    if (
+        abortController
+    ) {
+
+        abortController.abort();
+
+        setStatus(
+            "正在取消下載..."
+        );
+    }
+}
+
+
+/* ============================================================
+   GENERATE
 ============================================================ */
 
 async function generate() {
@@ -1133,12 +2148,13 @@ async function generate() {
     if (!llm) {
 
         addMessage(
-            "請先載入模型。",
+            "請先載入 Qwen 或 Gemma。",
             "system"
         );
 
         return;
     }
+
 
     if (isGenerating) {
         return;
@@ -1148,6 +2164,7 @@ async function generate() {
     const text =
         input.value.trim();
 
+
     if (!text) {
         return;
     }
@@ -1155,9 +2172,11 @@ async function generate() {
 
     isGenerating = true;
 
-    sendBtn.disabled = true;
+    sendBtn.disabled =
+        true;
 
-    input.disabled = true;
+    input.disabled =
+        true;
 
 
     addMessage(
@@ -1165,10 +2184,14 @@ async function generate() {
         "user"
     );
 
+
     input.value = "";
 
+    input.style.height =
+        "auto";
 
-    const outputEl =
+
+    const output =
         addMessage(
             "",
             "ai"
@@ -1177,21 +2200,29 @@ async function generate() {
 
     try {
 
-        /*
-         * MediaPipe LLM Inference API
-         */
+        setStatus(
+            `${MODELS[currentModelKey].name} 正在思考...`
+        );
 
-        const result =
+
+        const response =
             await llm.generateResponse(
                 text
             );
 
-        outputEl.textContent =
-            result || "(沒有產生文字)";
+
+        output.textContent =
+            response ||
+            "(沒有產生文字)";
 
 
         messages.scrollTop =
             messages.scrollHeight;
+
+
+        setStatus(
+            `${MODELS[currentModelKey].name} 就緒`
+        );
 
 
     } catch (error) {
@@ -1200,20 +2231,30 @@ async function generate() {
             error
         );
 
-        outputEl.textContent =
-            "產生回答時發生錯誤：\n" +
+
+        output.textContent =
+            "產生回答失敗：\n" +
             (
                 error?.message ||
                 String(error)
             );
 
+
+        setStatus(
+            "推論發生錯誤"
+        );
+
+
     } finally {
 
-        isGenerating = false;
+        isGenerating =
+            false;
 
-        sendBtn.disabled = false;
+        sendBtn.disabled =
+            false;
 
-        input.disabled = false;
+        input.disabled =
+            false;
 
         input.focus();
     }
@@ -1221,7 +2262,39 @@ async function generate() {
 
 
 /* ============================================================
-   Events
+   MODEL UI
+============================================================ */
+
+function updateTokenUI() {
+
+    if (
+        modelSelect.value ===
+        "gemma"
+    ) {
+
+        tokenRow.classList.add(
+            "visible"
+        );
+
+    } else {
+
+        tokenRow.classList.remove(
+            "visible"
+        );
+
+        tokenInput.value = "";
+    }
+}
+
+
+modelSelect.addEventListener(
+    "change",
+    updateTokenUI
+);
+
+
+/* ============================================================
+   BUTTONS
 ============================================================ */
 
 loadBtn.addEventListener(
@@ -1236,18 +2309,84 @@ sendBtn.addEventListener(
 );
 
 
+/* ============================================================
+   LONG PRESS / SECOND CLICK
+   If loading, clicking Load becomes cancel.
+============================================================ */
+
+loadBtn.addEventListener(
+    "click",
+    () => {
+
+        /*
+         * Handled above.
+         */
+    }
+);
+
+
+/*
+ * Separate double action:
+ *
+ * If download is running, change button to "取消".
+ */
+
+setInterval(
+    () => {
+
+        if (isLoading) {
+
+            loadBtn.textContent =
+                "取消";
+
+            loadBtn.onclick =
+                cancelDownload;
+
+        } else {
+
+            loadBtn.textContent =
+                "載入";
+
+            loadBtn.onclick =
+                null;
+        }
+
+    },
+    150
+);
+
+
+/* ============================================================
+   TEXTAREA
+============================================================ */
+
+input.addEventListener(
+    "input",
+    () => {
+
+        input.style.height =
+            "auto";
+
+
+        input.style.height =
+            Math.min(
+                input.scrollHeight,
+                130
+            ) +
+            "px";
+    }
+);
+
+
+/*
+ * Desktop Enter sends.
+ *
+ * iPhone keeps Enter as newline.
+ */
+
 input.addEventListener(
     "keydown",
     event => {
-
-        /*
-         * 桌面：
-         * Enter = 發送
-         *
-         * iPhone：
-         * 保留 Enter 作換行，
-         * 避免鍵盤操作不舒服。
-         */
 
         if (
             !isIOS &&
@@ -1264,27 +2403,7 @@ input.addEventListener(
 
 
 /* ============================================================
-   Auto resize textarea
-============================================================ */
-
-input.addEventListener(
-    "input",
-    () => {
-
-        input.style.height =
-            "auto";
-
-        input.style.height =
-            Math.min(
-                input.scrollHeight,
-                130
-            ) + "px";
-    }
-);
-
-
-/* ============================================================
-   iOS visibility handling
+   PAGE VISIBILITY
 ============================================================ */
 
 document.addEventListener(
@@ -1296,12 +2415,8 @@ document.addEventListener(
             "hidden"
         ) {
 
-            /*
-             * 不在背景執行新的工作。
-             */
-
             console.log(
-                "Page hidden"
+                "Local AI page hidden"
             );
         }
     }
@@ -1309,33 +2424,73 @@ document.addEventListener(
 
 
 /* ============================================================
-   Prevent accidental unload during loading
-============================================================ */
-
-window.addEventListener(
-    "beforeunload",
-    event => {
-
-        if (isLoading) {
-
-            event.preventDefault();
-
-            event.returnValue = "";
-        }
-    }
-);
-
-
-/* ============================================================
-   Startup
+   STARTUP
 ============================================================ */
 
 (async function startup() {
 
-    if (!navigator.gpu) {
+    updateTokenUI();
+
+
+    if (
+        location.protocol ===
+        "file:"
+    ) {
+
+        showWarning(
+            "⚠️ 請不要用 file:// 開啟。\n" +
+            "請把這個 HTML 放到 HTTPS 網站或 localhost。"
+        );
 
         setStatus(
-            "目前瀏覽器沒有 WebGPU，請使用支援 WebGPU 的 Safari。"
+            "需要 HTTPS / Secure Context"
+        );
+
+        return;
+    }
+
+
+    if (!window.isSecureContext) {
+
+        showWarning(
+            "⚠️ 此頁面不是 Secure Context。\n" +
+            "OPFS / WebGPU 可能無法正常工作。"
+        );
+    }
+
+
+    if (!navigator.gpu) {
+
+        showWarning(
+            "⚠️ 找不到 WebGPU。\n" +
+            "請確認 iPhone / Safari 版本支援 WebGPU。"
+        );
+
+        setStatus(
+            "WebGPU 不可用"
+        );
+
+        return;
+    }
+
+
+    /*
+     * Test OPFS.
+     */
+
+    try {
+
+        await getOPFSRoot();
+
+    } catch (error) {
+
+        showWarning(
+            "⚠️ OPFS 不可用。\n" +
+            "請使用新版 iOS Safari。"
+        );
+
+        setStatus(
+            "OPFS 不可用"
         );
 
         return;
@@ -1345,13 +2500,14 @@ window.addEventListener(
     if (isIOS) {
 
         setStatus(
-            "iPhone 模式：建議使用 Qwen 2.5 0.5B。"
+            "iPhone 模式已啟用。\n" +
+            "建議先使用 Qwen 0.5B。"
         );
 
     } else {
 
         setStatus(
-            "WebGPU 可用，請選擇模型後按「載入」。"
+            "WebGPU + OPFS 已就緒。"
         );
     }
 
