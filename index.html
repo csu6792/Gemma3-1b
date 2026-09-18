@@ -2,421 +2,2144 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>LiteRT.js WebGPU LLM Chat</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  />
+
+  <title>LiteRT.js WebGPU AI Chat</title>
+
   <style>
     :root {
       --bg: #0d1117;
       --card: #161b22;
       --border: #30363d;
       --text: #c9d1d9;
-      --text-muted: #8b949e;
+      --muted: #8b949e;
       --accent: #58a6ff;
       --accent-hover: #1f6feb;
       --ok: #3fb950;
       --warn: #d29922;
       --err: #f85149;
-      --user-msg: #1f242c;
-      --ai-msg: #161b22;
+      --user: #1f242c;
+      --ai: #161b22;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        "Noto Sans TC",
+        sans-serif;
+
       background: var(--bg);
       color: var(--text);
+
       height: 100dvh;
+
       display: flex;
       flex-direction: column;
+
       overflow: hidden;
     }
 
+    /* =========================
+       Header
+    ========================= */
+
     header {
+      flex-shrink: 0;
+
       padding: 12px 16px;
+
       background: var(--card);
+
       border-bottom: 1px solid var(--border);
+
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-shrink: 0;
-    }
 
-    .title-group h1 { font-size: 1rem; font-weight: 600; color: #fff; }
-    .title-group p { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: #21262d;
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-    }
-    .badge.ok { color: var(--ok); border-color: var(--ok); }
-    .badge.warn { color: var(--warn); border-color: var(--warn); }
-    .badge.err { color: var(--err); border-color: var(--err); }
-
-    #chat-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
       gap: 12px;
     }
 
-    .msg { display: flex; flex-direction: column; max-width: 85%; }
-    .msg.user { align-self: flex-end; }
-    .msg.ai { align-self: flex-start; }
+    .title-group {
+      min-width: 0;
+    }
+
+    .title-group h1 {
+      color: #fff;
+
+      font-size: 1rem;
+
+      font-weight: 600;
+    }
+
+    .title-group p {
+      color: var(--muted);
+
+      font-size: 0.72rem;
+
+      margin-top: 3px;
+    }
+
+    .badge {
+      flex-shrink: 0;
+
+      padding: 4px 9px;
+
+      border-radius: 20px;
+
+      background: #21262d;
+
+      border: 1px solid var(--border);
+
+      color: var(--muted);
+
+      font-size: 0.72rem;
+    }
+
+    .badge.ok {
+      color: var(--ok);
+      border-color: var(--ok);
+    }
+
+    .badge.warn {
+      color: var(--warn);
+      border-color: var(--warn);
+    }
+
+    .badge.err {
+      color: var(--err);
+      border-color: var(--err);
+    }
+
+    /* =========================
+       Chat
+    ========================= */
+
+    #chat-container {
+      flex: 1;
+
+      min-height: 0;
+
+      overflow-y: auto;
+
+      padding: 16px;
+
+      display: flex;
+      flex-direction: column;
+
+      gap: 12px;
+
+      overscroll-behavior: contain;
+
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .msg {
+      max-width: 85%;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+    }
+
+    .msg.ai {
+      align-self: flex-start;
+    }
 
     .bubble {
       padding: 10px 14px;
+
       border-radius: 12px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
+
       border: 1px solid var(--border);
+
+      font-size: 0.95rem;
+
+      line-height: 1.55;
+
+      white-space: pre-wrap;
+
+      word-break: break-word;
     }
-    .msg.user .bubble { background: var(--user-msg); border-color: #38444d; color: #fff; }
-    .msg.ai .bubble { background: var(--ai-msg); }
+
+    .msg.user .bubble {
+      background: var(--user);
+
+      color: #fff;
+
+      border-color: #38444d;
+    }
+
+    .msg.ai .bubble {
+      background: var(--ai);
+    }
+
+    /* =========================
+       Setup panel
+    ========================= */
 
     .control-panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin: 10px auto;
-      max-width: 520px;
       width: 100%;
+      max-width: 560px;
+
+      margin: 10px auto;
+
+      padding: 16px;
+
+      background: var(--card);
+
+      border: 1px solid var(--border);
+
+      border-radius: 12px;
     }
 
-    .control-panel h2 { font-size: 0.95rem; margin-bottom: 8px; color: #fff; }
-    .control-panel p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; }
+    .control-panel h2 {
+      color: #fff;
+
+      font-size: 0.95rem;
+
+      margin-bottom: 8px;
+    }
+
+    .control-panel > p {
+      color: var(--muted);
+
+      font-size: 0.8rem;
+
+      line-height: 1.5;
+
+      margin-bottom: 14px;
+    }
 
     .field-label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
       display: block;
-      margin-bottom: 4px;
+
+      color: var(--muted);
+
+      font-size: 0.8rem;
+
       font-weight: 600;
+
+      margin-bottom: 5px;
     }
 
-    select, input[type="password"], button {
+    select,
+    input[type="password"],
+    button {
       width: 100%;
-      padding: 10px 12px;
+
       border-radius: 8px;
+
       border: 1px solid var(--border);
+
       background: #21262d;
+
       color: #fff;
+
+      font-family: inherit;
+
       font-size: 0.9rem;
+
       outline: none;
     }
 
-    select, input[type="password"] { margin-bottom: 12px; }
-    select { cursor: pointer; }
+    select,
+    input[type="password"] {
+      padding: 10px 12px;
 
-    button#load-btn {
-      background: var(--accent);
-      border: none;
-      color: #fff;
-      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    select {
       cursor: pointer;
-      transition: background 0.2s;
     }
-    button#load-btn:hover { background: var(--accent-hover); }
-    button#load-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .progress-bar-bg {
-      height: 6px;
-      background: #21262d;
-      border-radius: 3px;
-      margin-top: 10px;
-      overflow: hidden;
+    select:focus,
+    input[type="password"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
     }
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
+
+    button {
+      padding: 10px 12px;
+    }
+
+    #load-btn {
       background: var(--accent);
+
+      border: none;
+
+      color: #fff;
+
+      font-weight: 600;
+
+      cursor: pointer;
+
+      transition: 0.2s;
+    }
+
+    #load-btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    #load-btn:disabled {
+      opacity: 0.5;
+
+      cursor: not-allowed;
+    }
+
+    #cancel-btn {
+      display: none;
+
+      margin-top: 8px;
+
+      background: transparent;
+
+      color: var(--muted);
+
+      cursor: pointer;
+    }
+
+    #cancel-btn:hover {
+      color: #fff;
+    }
+
+    /* =========================
+       Progress
+    ========================= */
+
+    .progress-bg {
+      width: 100%;
+
+      height: 6px;
+
+      margin-top: 12px;
+
+      overflow: hidden;
+
+      background: #21262d;
+
+      border-radius: 4px;
+    }
+
+    #progress-fill {
+      width: 0%;
+
+      height: 100%;
+
+      background: var(--accent);
+
       transition: width 0.1s linear;
     }
 
     #status-text {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+      min-height: 18px;
+
       margin-top: 8px;
+
+      color: var(--muted);
+
+      font-size: 0.75rem;
+
       text-align: center;
     }
 
-    .input-area {
-      padding: 12px 16px;
-      background: var(--card);
-      border-top: 1px solid var(--border);
+    /* =========================
+       Info
+    ========================= */
+
+    .info-box {
+      margin-top: 12px;
+
+      padding: 10px 12px;
+
+      background: #0d1117;
+
+      border: 1px solid var(--border);
+
+      border-radius: 8px;
+
+      color: var(--muted);
+
+      font-size: 0.74rem;
+
+      line-height: 1.5;
+    }
+
+    .info-box strong {
+      color: #fff;
+    }
+
+    /* =========================
+       Cache
+    ========================= */
+
+    .cache-row {
+      margin-top: 10px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 8px;
+    }
+
+    #cache-status {
+      min-width: 0;
+
+      color: var(--muted);
+
+      font-size: 0.7rem;
+    }
+
+    #clear-cache-btn {
+      width: auto;
+
+      padding: 6px 9px;
+
       flex-shrink: 0;
+
+      background: transparent;
+
+      color: var(--muted);
+
+      font-size: 0.7rem;
+
+      cursor: pointer;
+    }
+
+    #clear-cache-btn:hover {
+      color: var(--err);
+
+      border-color: var(--err);
+    }
+
+    /* =========================
+       Input
+    ========================= */
+
+    .input-area {
+      flex-shrink: 0;
+
+      padding: 12px 16px;
+
+      background: var(--card);
+
+      border-top: 1px solid var(--border);
     }
 
     .input-row {
-      display: flex;
-      gap: 8px;
+      width: 100%;
+
       max-width: 800px;
+
       margin: 0 auto;
+
+      display: flex;
+
+      gap: 8px;
     }
 
     textarea {
       flex: 1;
-      resize: none;
-      height: 44px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #0d1117;
-      color: #fff;
-      font-size: 16px;
-      outline: none;
-      font-family: inherit;
-    }
-    textarea:disabled { opacity: 0.5; }
 
-    button#send-btn {
-      width: 44px;
+      width: 100%;
+
       height: 44px;
+
+      resize: none;
+
+      padding: 10px 12px;
+
       border-radius: 8px;
-      border: none;
-      background: var(--accent);
+
+      border: 1px solid var(--border);
+
+      background: #0d1117;
+
       color: #fff;
+
+      font-family: inherit;
+
+      font-size: 16px;
+
+      line-height: 1.4;
+
+      outline: none;
+    }
+
+    textarea:disabled {
+      opacity: 0.5;
+    }
+
+    #send-btn {
+      flex: 0 0 44px;
+
+      width: 44px;
+
+      height: 44px;
+
+      padding: 0;
+
+      border: none;
+
+      border-radius: 8px;
+
+      background: var(--accent);
+
+      color: #fff;
+
       font-size: 1.1rem;
+
       cursor: pointer;
     }
-    button#send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #send-btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    #send-btn:disabled {
+      opacity: 0.4;
+
+      cursor: not-allowed;
+    }
+
+    /* =========================
+       Mobile
+    ========================= */
+
+    @media (max-width: 600px) {
+      header {
+        padding: 10px 12px;
+      }
+
+      #chat-container {
+        padding: 10px;
+      }
+
+      .control-panel {
+        padding: 14px;
+      }
+
+      .msg {
+        max-width: 92%;
+      }
+
+      .input-area {
+        padding: 8px 10px;
+      }
+    }
   </style>
 </head>
+
 <body>
 
+  <!-- =========================
+       Header
+  ========================== -->
+
   <header>
+
     <div class="title-group">
-      <h1>WebGPU 在端 AI 對話</h1>
-      <p>LiteRT.js (Gemma & Qwen Engine)</p>
+
+      <h1>
+        WebGPU 在端 AI 對話
+      </h1>
+
+      <p>
+        LiteRT.js / MediaPipe Tasks GenAI
+      </p>
+
     </div>
-    <div id="gpu-status" class="badge">檢查 WebGPU 中...</div>
+
+    <div
+      id="gpu-status"
+      class="badge"
+    >
+      檢查 WebGPU 中...
+    </div>
+
   </header>
 
-  <div id="chat-container">
-    <div class="control-panel" id="setup-panel">
-      <h2>選擇 LiteRT AI 模型</h2>
-      <p>挑選要載入的模型。若遇到 HTTP 401 錯誤，請在下方填入你的 Hugging Face Access Token。</p>
-      
-      <label class="field-label" for="model-select">1. 選擇模型：</label>
+
+  <!-- =========================
+       Chat
+  ========================== -->
+
+  <main id="chat-container">
+
+    <!-- Setup -->
+
+    <div
+      id="setup-panel"
+      class="control-panel"
+    >
+
+      <h2>
+        選擇 LiteRT AI 模型
+      </h2>
+
+      <p>
+        模型會直接下載到瀏覽器，並使用你的裝置 GPU
+        在本機執行，不需要把對話內容送到遠端 AI API。
+      </p>
+
+
+      <!-- Model -->
+
+      <label
+        class="field-label"
+        for="model-select"
+      >
+        1. 選擇模型
+      </label>
+
       <select id="model-select">
-        <optgroup label="Gemma 系列 (Google - 受保護模型)">
-          <option value="https://huggingface.co/litert-community/gemma-3-1b-it-litert-lm/resolve/main/gemma3-1b-it-int4-web.task">
-            Gemma 3 1B IT (INT4 Web · 約 668 MB)
+
+        <optgroup label="Qwen 系列">
+
+          <option
+            value="https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task"
+            data-name="Qwen 2.5 0.5B Instruct"
+            data-size="約 547 MB"
+          >
+            Qwen 2.5 0.5B Instruct · Q8 · 約 547 MB
           </option>
-          <option value="https://huggingface.co/litert-community/gemma-2-2b-it-litert-lm/resolve/main/gemma2-2b-it-gpu-int4.task">
-            Gemma 2 2B IT (INT4 GPU · 約 1.3 GB)
-          </option>
+
         </optgroup>
-        <optgroup label="Qwen 系列 (Alibaba Cloud)">
-          <option value="https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct-litert-lm/resolve/main/qwen2.5-0.5b-instruct-gpu-int4.task">
-            Qwen 2.5 0.5B Instruct (INT4 Web · 約 380 MB)
+
+
+        <optgroup label="Gemma 系列">
+
+          <option
+            value="https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4-web.task"
+            data-name="Gemma 3 1B IT"
+            data-size="約 700 MB"
+          >
+            Gemma 3 1B IT · INT4 Web · 約 700 MB
           </option>
-          <option value="https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct-litert-lm/resolve/main/qwen2.5-1.5b-instruct-gpu-int4.task">
-            Qwen 2.5 1.5B Instruct (INT4 Web · 約 980 MB)
-          </option>
+
         </optgroup>
+
       </select>
 
-      <label class="field-label" for="hf-token">2. Hugging Face Access Token (用於解鎖 401)：</label>
-      <input type="password" id="hf-token" placeholder="貼上你的 Token (例如 hf_xxxxxxxxxxxx)" autocomplete="off" />
 
-      <button type="button" id="load-btn">下載並初始化模型</button>
+      <!-- HF Token -->
 
-      <div class="progress-bar-bg">
-        <div id="progress-fill" class="progress-bar-fill"></div>
+      <label
+        class="field-label"
+        for="hf-token"
+      >
+        2. Hugging Face Access Token
+      </label>
+
+      <input
+        id="hf-token"
+        type="password"
+        placeholder="hf_xxxxxxxxxxxxxxxxx"
+        autocomplete="off"
+        spellcheck="false"
+      />
+
+
+      <!-- Load -->
+
+      <button
+        id="load-btn"
+        type="button"
+      >
+        下載並初始化模型
+      </button>
+
+
+      <!-- Cancel -->
+
+      <button
+        id="cancel-btn"
+        type="button"
+      >
+        取消下載
+      </button>
+
+
+      <!-- Progress -->
+
+      <div class="progress-bg">
+
+        <div
+          id="progress-fill"
+        ></div>
+
       </div>
-      <div id="status-text">點擊按鈕開始下載</div>
+
+
+      <div id="status-text">
+        點擊按鈕開始下載
+      </div>
+
+
+      <!-- Cache -->
+
+      <div class="cache-row">
+
+        <div id="cache-status">
+          檢查模型快取中...
+        </div>
+
+        <button
+          id="clear-cache-btn"
+          type="button"
+        >
+          清除快取
+        </button>
+
+      </div>
+
+
+      <!-- Info -->
+
+      <div class="info-box">
+
+        <strong>注意：</strong>
+
+        Gemma 3 是 Hugging Face gated model。
+        使用 Gemma 時，需要先登入 Hugging Face，
+        接受 Gemma license，並使用具有讀取權限的 Token。
+
+        <br><br>
+
+        如果只是測試 WebGPU，
+        建議先使用 Qwen 2.5 0.5B。
+
+      </div>
+
     </div>
-  </div>
+
+  </main>
+
+
+  <!-- =========================
+       Chat Input
+  ========================== -->
 
   <div class="input-area">
+
     <div class="input-row">
-      <textarea id="user-input" placeholder="請先載入模型..." disabled></textarea>
-      <button type="button" id="send-btn" disabled>➤</button>
+
+      <textarea
+        id="user-input"
+        placeholder="請先載入模型..."
+        disabled
+      ></textarea>
+
+      <button
+        id="send-btn"
+        type="button"
+        disabled
+        aria-label="送出"
+      >
+        ➤
+      </button>
+
     </div>
+
   </div>
 
-  <script type="module">
-    import { FilesetResolver, LlmInference } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27/+esm';
 
-    const gpuStatus = document.getElementById("gpu-status");
-    const setupPanel = document.getElementById("setup-panel");
-    const modelSelect = document.getElementById("model-select");
-    const hfTokenInput = document.getElementById("hf-token");
-    const loadBtn = document.getElementById("load-btn");
-    const progressFill = document.getElementById("progress-fill");
-    const statusText = document.getElementById("status-text");
-    const chatContainer = document.getElementById("chat-container");
-    const userInput = document.getElementById("user-input");
-    const sendBtn = document.getElementById("send-btn");
+  <!-- =========================
+       JavaScript
+  ========================== -->
+
+  <script type="module">
+
+    /*
+     * ============================================================
+     * LiteRT / MediaPipe Tasks GenAI
+     * ============================================================
+     *
+     * Package:
+     *
+     * @mediapipe/tasks-genai@0.10.29
+     *
+     * ============================================================
+     */
+
+    import {
+      FilesetResolver,
+      LlmInference
+    } from
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
+
+
+    /* ============================================================
+       DOM
+    ============================================================ */
+
+    const gpuStatus =
+      document.getElementById(
+        "gpu-status"
+      );
+
+    const setupPanel =
+      document.getElementById(
+        "setup-panel"
+      );
+
+    const modelSelect =
+      document.getElementById(
+        "model-select"
+      );
+
+    const hfTokenInput =
+      document.getElementById(
+        "hf-token"
+      );
+
+    const loadBtn =
+      document.getElementById(
+        "load-btn"
+      );
+
+    const cancelBtn =
+      document.getElementById(
+        "cancel-btn"
+      );
+
+    const progressFill =
+      document.getElementById(
+        "progress-fill"
+      );
+
+    const statusText =
+      document.getElementById(
+        "status-text"
+      );
+
+    const cacheStatus =
+      document.getElementById(
+        "cache-status"
+      );
+
+    const clearCacheBtn =
+      document.getElementById(
+        "clear-cache-btn"
+      );
+
+    const chatContainer =
+      document.getElementById(
+        "chat-container"
+      );
+
+    const userInput =
+      document.getElementById(
+        "user-input"
+      );
+
+    const sendBtn =
+      document.getElementById(
+        "send-btn"
+      );
+
+
+    /* ============================================================
+       State
+    ============================================================ */
 
     let llmInference = null;
+
     let isBusy = false;
 
-    // 檢查 WebGPU 支援
-    if (!navigator.gpu) {
-      gpuStatus.textContent = "無 WebGPU 支援";
-      gpuStatus.className = "badge err";
-      statusText.textContent = "您的瀏覽器不支援 WebGPU，請使用 Chrome / Edge 最新版。";
-      loadBtn.disabled = true;
-    } else {
-      gpuStatus.textContent = "WebGPU 就緒";
-      gpuStatus.className = "badge ok";
-    }
+    let downloadController = null;
 
-    function addMessage(role, text) {
-      const msgDiv = document.createElement("div");
-      msgDiv.className = `msg ${role}`;
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = text;
-      msgDiv.appendChild(bubble);
-      chatContainer.appendChild(msgDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      return bubble;
-    }
+    let currentBlobUrl = null;
 
-    // 支援 Token 認證與進度條的 Fetch 函式
-    async function fetchModelWithProgress(url, token) {
-      const headers = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
 
-      const response = await fetch(url, { headers });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("HTTP 401 未授權：請檢查是否已輸入正確的 HF Token，且該帳號已在模型頁面點擊『Acknowledge license / 同意條款』。");
+    /* ============================================================
+       IndexedDB
+    ============================================================ */
+
+    const DB_NAME =
+      "litert-web-llm-cache";
+
+    const DB_VERSION = 1;
+
+    const STORE_NAME =
+      "models";
+
+
+    function openDatabase() {
+
+      return new Promise(
+        (resolve, reject) => {
+
+          const request =
+            indexedDB.open(
+              DB_NAME,
+              DB_VERSION
+            );
+
+
+          request.onupgradeneeded =
+            () => {
+
+              const db =
+                request.result;
+
+              if (
+                !db.objectStoreNames.contains(
+                  STORE_NAME
+                )
+              ) {
+
+                db.createObjectStore(
+                  STORE_NAME,
+                  {
+                    keyPath: "url"
+                  }
+                );
+
+              }
+
+            };
+
+
+          request.onsuccess =
+            () => {
+
+              resolve(
+                request.result
+              );
+
+            };
+
+
+          request.onerror =
+            () => {
+
+              reject(
+                request.error
+              );
+
+            };
+
         }
-        throw new Error(`下載失敗 HTTP ${response.status} (${response.statusText})`);
-      }
+      );
 
-      const contentLength = +response.headers.get("Content-Length");
-      const reader = response.body.getReader();
-      let receivedLength = 0;
-      let chunks = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        receivedLength += value.length;
-
-        if (contentLength) {
-          const percent = Math.round((receivedLength / contentLength) * 100);
-          progressFill.style.width = percent + "%";
-          const mbRead = (receivedLength / 1024 / 1024).toFixed(1);
-          const mbTotal = (contentLength / 1024 / 1024).toFixed(1);
-          statusText.textContent = `下載中... ${percent}% (${mbRead} MB / ${mbTotal} MB)`;
-        } else {
-          statusText.textContent = `下載中... ${(receivedLength / 1024 / 1024).toFixed(1)} MB`;
-        }
-      }
-
-      const blob = new Blob(chunks);
-      return URL.createObjectURL(blob);
     }
 
-    // 載入模型按鈕點擊事件
-    loadBtn.addEventListener("click", async () => {
-      loadBtn.disabled = true;
-      modelSelect.disabled = true;
-      hfTokenInput.disabled = true;
-      statusText.textContent = "準備下載模型...";
+
+    async function getCachedModel(
+      url
+    ) {
 
       try {
-        const modelUrl = modelSelect.value;
-        const token = hfTokenInput.value.trim();
-        const selectedOptionText = modelSelect.options[modelSelect.selectedIndex].text;
 
-        const blobUrl = await fetchModelWithProgress(modelUrl, token);
+        const db =
+          await openDatabase();
 
-        statusText.textContent = "載入 LiteRT WebAssembly 引擎...";
-        const genaiFileset = await FilesetResolver.forGenAiTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27/wasm"
+
+        return await new Promise(
+          (resolve, reject) => {
+
+            const transaction =
+              db.transaction(
+                STORE_NAME,
+                "readonly"
+              );
+
+
+            const store =
+              transaction.objectStore(
+                STORE_NAME
+              );
+
+
+            const request =
+              store.get(url);
+
+
+            request.onsuccess =
+              () => {
+
+                resolve(
+                  request.result ||
+                  null
+                );
+
+              };
+
+
+            request.onerror =
+              () => {
+
+                reject(
+                  request.error
+                );
+
+              };
+
+          }
         );
 
-        statusText.textContent = "初始化模型至 VRAM...";
-        llmInference = await LlmInference.createFromOptions(genaiFileset, {
-          baseOptions: {
-            modelAssetPath: blobUrl
-          },
-          maxTokens: 1024,
-          temperature: 0.7,
-          topK: 40
-        });
+      } catch (error) {
 
-        statusText.textContent = "就緒！";
-        progressFill.style.width = "100%";
-        setupPanel.style.display = "none";
+        console.warn(
+          "IndexedDB read error:",
+          error
+        );
 
-        userInput.disabled = false;
-        sendBtn.disabled = false;
-        userInput.placeholder = "輸入問題...";
-        userInput.focus();
+        return null;
 
-        addMessage("ai", `已成功載入 [${selectedOptionText.split('(')[0].trim()}]！請開始提問。`);
-      } catch (err) {
-        console.error(err);
-        statusText.textContent = `錯誤：${err.message || err}`;
-        loadBtn.disabled = false;
-        modelSelect.disabled = false;
-        hfTokenInput.disabled = false;
       }
-    });
 
-    // 發送對話訊息
-    async function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text || !llmInference || isBusy) return;
-
-      isBusy = true;
-      userInput.value = "";
-      userInput.disabled = true;
-      sendBtn.disabled = true;
-
-      addMessage("user", text);
-      const aiBubble = addMessage("ai", "...");
-
-      try {
-        let fullOutput = "";
-        
-        await llmInference.generateResponse(text, (partialResult, done) => {
-          fullOutput += partialResult;
-          aiBubble.textContent = fullOutput || "...";
-          chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-        if (!fullOutput) aiBubble.textContent = "(無回應)";
-      } catch (err) {
-        console.error(err);
-        aiBubble.textContent = `推理錯誤：${err.message || err}`;
-      } finally {
-        isBusy = false;
-        userInput.disabled = false;
-        sendBtn.disabled = false;
-        userInput.focus();
-      }
     }
 
-    sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
+
+    async function saveCachedModel(
+      url,
+      blob
+    ) {
+
+      try {
+
+        const db =
+          await openDatabase();
+
+
+        await new Promise(
+          (resolve, reject) => {
+
+            const transaction =
+              db.transaction(
+                STORE_NAME,
+                "readwrite"
+              );
+
+
+            const store =
+              transaction.objectStore(
+                STORE_NAME
+              );
+
+
+            const request =
+              store.put({
+                url: url,
+                blob: blob,
+                createdAt: Date.now()
+              });
+
+
+            request.onsuccess =
+              () => resolve();
+
+
+            request.onerror =
+              () => reject(
+                request.error
+              );
+
+          }
+        );
+
+      } catch (error) {
+
+        console.warn(
+          "IndexedDB write error:",
+          error
+        );
+
       }
-    });
+
+    }
+
+
+    async function clearModelCache() {
+
+      try {
+
+        const db =
+          await openDatabase();
+
+
+        await new Promise(
+          (resolve, reject) => {
+
+            const transaction =
+              db.transaction(
+                STORE_NAME,
+                "readwrite"
+              );
+
+
+            const store =
+              transaction.objectStore(
+                STORE_NAME
+              );
+
+
+            const request =
+              store.clear();
+
+
+            request.onsuccess =
+              () => resolve();
+
+
+            request.onerror =
+              () => reject(
+                request.error
+              );
+
+          }
+        );
+
+
+        cacheStatus.textContent =
+          "模型快取已清除";
+
+      } catch (error) {
+
+        console.error(
+          error
+        );
+
+        cacheStatus.textContent =
+          "清除快取失敗";
+
+      }
+
+    }
+
+
+    /* ============================================================
+       Cache status
+    ============================================================ */
+
+    async function updateCacheStatus() {
+
+      cacheStatus.textContent =
+        "檢查模型快取...";
+
+
+      const url =
+        modelSelect.value;
+
+
+      const cached =
+        await getCachedModel(
+          url
+        );
+
+
+      if (
+        cached &&
+        cached.blob
+      ) {
+
+        const size =
+          (
+            cached.blob.size /
+            1024 /
+            1024
+          ).toFixed(0);
+
+
+        cacheStatus.textContent =
+          `已快取此模型 · ${size} MB`;
+
+      } else {
+
+        cacheStatus.textContent =
+          "此模型尚未下載";
+
+      }
+
+    }
+
+
+    /* ============================================================
+       WebGPU
+    ============================================================ */
+
+    async function checkWebGPU() {
+
+      if (
+        !navigator.gpu
+      ) {
+
+        gpuStatus.textContent =
+          "無 WebGPU";
+
+        gpuStatus.className =
+          "badge err";
+
+
+        statusText.textContent =
+          "此瀏覽器沒有 WebGPU。請使用支援 WebGPU 的新版 Chrome、Edge 或 Safari。";
+
+
+        loadBtn.disabled =
+          true;
+
+
+        return false;
+
+      }
+
+
+      try {
+
+        const adapter =
+          await navigator.gpu.requestAdapter();
+
+
+        if (!adapter) {
+
+          gpuStatus.textContent =
+            "WebGPU 不可用";
+
+          gpuStatus.className =
+            "badge err";
+
+
+          statusText.textContent =
+            "瀏覽器有 WebGPU API，但沒有取得 GPU Adapter。";
+
+
+          loadBtn.disabled =
+            true;
+
+
+          return false;
+
+        }
+
+
+        gpuStatus.textContent =
+          "WebGPU 就緒";
+
+        gpuStatus.className =
+          "badge ok";
+
+
+        return true;
+
+      } catch (error) {
+
+        console.error(
+          error
+        );
+
+
+        gpuStatus.textContent =
+          "WebGPU 錯誤";
+
+        gpuStatus.className =
+          "badge err";
+
+
+        loadBtn.disabled =
+          true;
+
+
+        return false;
+
+      }
+
+    }
+
+
+    /* ============================================================
+       UI helpers
+    ============================================================ */
+
+    function setProgress(
+      percent
+    ) {
+
+      const value =
+        Math.max(
+          0,
+          Math.min(
+            100,
+            percent
+          )
+        );
+
+
+      progressFill.style.width =
+        `${value}%`;
+
+    }
+
+
+    function addMessage(
+      role,
+      text
+    ) {
+
+      const message =
+        document.createElement(
+          "div"
+        );
+
+
+      message.className =
+        `msg ${role}`;
+
+
+      const bubble =
+        document.createElement(
+          "div"
+        );
+
+
+      bubble.className =
+        "bubble";
+
+
+      bubble.textContent =
+        text;
+
+
+      message.appendChild(
+        bubble
+      );
+
+
+      chatContainer.appendChild(
+        message
+      );
+
+
+      chatContainer.scrollTop =
+        chatContainer.scrollHeight;
+
+
+      return bubble;
+
+    }
+
+
+    function getSelectedModel() {
+
+      const option =
+        modelSelect.options[
+          modelSelect.selectedIndex
+        ];
+
+
+      return {
+
+        url:
+          option.value,
+
+        name:
+          option.dataset.name ||
+          option.textContent.trim(),
+
+        size:
+          option.dataset.size ||
+          ""
+
+      };
+
+    }
+
+
+    /* ============================================================
+       Download
+    ============================================================ */
+
+    async function downloadModel(
+      url,
+      token
+    ) {
+
+      downloadController =
+        new AbortController();
+
+
+      const headers = {};
+
+
+      if (token) {
+
+        headers[
+          "Authorization"
+        ] =
+          `Bearer ${token}`;
+
+      }
+
+
+      statusText.textContent =
+        "連線至 Hugging Face...";
+
+
+      const response =
+        await fetch(
+          url,
+          {
+            method: "GET",
+
+            headers: headers,
+
+            signal:
+              downloadController.signal,
+
+            cache: "no-store"
+          }
+        );
+
+
+      if (
+        !response.ok
+      ) {
+
+        if (
+          response.status ===
+          401
+        ) {
+
+          throw new Error(
+            "HTTP 401 未授權。請確認 Hugging Face Token 正確，且 Gemma 已接受 license。"
+          );
+
+        }
+
+
+        if (
+          response.status ===
+          403
+        ) {
+
+          throw new Error(
+            "HTTP 403 禁止存取。請確認 Token 有讀取模型的權限。"
+          );
+
+        }
+
+
+        if (
+          response.status ===
+          404
+        ) {
+
+          throw new Error(
+            "HTTP 404：模型檔案不存在，請確認模型 URL。"
+          );
+
+        }
+
+
+        throw new Error(
+          `HTTP ${response.status} ${response.statusText}`
+        );
+
+      }
+
+
+      if (
+        !response.body
+      ) {
+
+        throw new Error(
+          "瀏覽器不支援 Streaming Response。"
+        );
+
+      }
+
+
+      const contentLength =
+        Number(
+          response.headers.get(
+            "Content-Length"
+          )
+        );
+
+
+      const reader =
+        response.body.getReader();
+
+
+      const chunks = [];
+
+
+      let received =
+        0;
+
+
+      while (true) {
+
+        const result =
+          await reader.read();
+
+
+        if (
+          result.done
+        ) {
+
+          break;
+
+        }
+
+
+        const value =
+          result.value;
+
+
+        chunks.push(
+          value
+        );
+
+
+        received +=
+          value.byteLength;
+
+
+        if (
+          Number.isFinite(
+            contentLength
+          ) &&
+          contentLength > 0
+        ) {
+
+          const percent =
+            (
+              received /
+              contentLength
+            ) *
+            100;
+
+
+          setProgress(
+            percent
+          );
+
+
+          const currentMB =
+            (
+              received /
+              1024 /
+              1024
+            ).toFixed(1);
+
+
+          const totalMB =
+            (
+              contentLength /
+              1024 /
+              1024
+            ).toFixed(1);
+
+
+          statusText.textContent =
+            `下載中 ${Math.round(percent)}% · ${currentMB} / ${totalMB} MB`;
+
+        } else {
+
+          const currentMB =
+            (
+              received /
+              1024 /
+              1024
+            ).toFixed(1);
+
+
+          statusText.textContent =
+            `下載中 · ${currentMB} MB`;
+
+        }
+
+      }
+
+
+      return new Blob(
+        chunks,
+        {
+          type:
+            "application/octet-stream"
+        }
+      );
+
+    }
+
+
+    /* ============================================================
+       Initialize LiteRT
+    ============================================================ */
+
+    async function initializeLiteRT(
+      blobUrl
+    ) {
+
+      statusText.textContent =
+        "載入 LiteRT WebAssembly...";
+
+
+      const wasmPath =
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm";
+
+
+      const genaiFileset =
+        await FilesetResolver.forGenAiTasks(
+          wasmPath
+        );
+
+
+      statusText.textContent =
+        "初始化模型至 GPU...";
+
+
+      const inference =
+        await LlmInference.createFromOptions(
+          genaiFileset,
+          {
+            baseOptions: {
+
+              modelAssetPath:
+                blobUrl
+
+            },
+
+            maxTokens:
+              512,
+
+            temperature:
+              0.7,
+
+            topK:
+              40
+          }
+        );
+
+
+      return inference;
+
+    }
+
+
+    /* ============================================================
+       Load
+    ============================================================ */
+
+    async function loadModel() {
+
+      loadBtn.disabled =
+        true;
+
+
+      modelSelect.disabled =
+        true;
+
+
+      hfTokenInput.disabled =
+        true;
+
+
+      cancelBtn.style.display =
+        "block";
+
+
+      setProgress(
+        0
+      );
+
+
+      const model =
+        getSelectedModel();
+
+
+      try {
+
+        /* ---------------------------------
+           Check cache
+        --------------------------------- */
+
+        statusText.textContent =
+          "檢查本機模型快取...";
+
+
+        const cached =
+          await getCachedModel(
+            model.url
+          );
+
+
+        let blob;
+
+
+        if (
+          cached &&
+          cached.blob
+        ) {
+
+          blob =
+            cached.blob;
+
+
+          setProgress(
+            100
+          );
+
+
+          statusText.textContent =
+            "使用本機模型快取...";
+
+        } else {
+
+          /* -------------------------------
+             Download
+          -------------------------------- */
+
+          const token =
+            hfTokenInput.value.trim();
+
+
+          blob =
+            await downloadModel(
+              model.url,
+              token
+            );
+
+
+          /* -------------------------------
+             Save cache
+          -------------------------------- */
+
+          statusText.textContent =
+            "下載完成，建立本機快取...";
+
+
+          await saveCachedModel(
+            model.url,
+            blob
+          );
+
+        }
+
+
+        /* ---------------------------------
+           Blob URL
+        --------------------------------- */
+
+        if (
+          currentBlobUrl
+        ) {
+
+          URL.revokeObjectURL(
+            currentBlobUrl
+          );
+
+        }
+
+
+        currentBlobUrl =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        /* ---------------------------------
+           LiteRT
+        --------------------------------- */
+
+        llmInference =
+          await initializeLiteRT(
+            currentBlobUrl
+          );
+
+
+        /* ---------------------------------
+           Ready
+        --------------------------------- */
+
+        statusText.textContent =
+          "模型已就緒";
+
+
+        setProgress(
+          100
+        );
+
+
+        setupPanel.style.display =
+          "none";
+
+
+        userInput.disabled =
+          false;
+
+
+        sendBtn.disabled =
+          false;
+
+
+        userInput.placeholder =
+          "輸入問題，按 Enter 送出...";
+
+
+        addMessage(
+          "ai",
+          `模型「${model.name}」已成功載入。\n\n現在可以開始聊天。`
+        );
+
+
+        userInput.focus();
+
+      } catch (error) {
+
+        console.error(
+          "Model loading error:",
+          error
+        );
+
+
+        if (
+          error &&
+          error.name ===
+          "AbortError"
+        ) {
+
+          statusText.textContent =
+            "下載已取消";
+
+        } else {
+
+          statusText.textContent =
+            `錯誤：${error?.message || error}`;
+
+
+          addMessage(
+            "ai",
+            `模型載入失敗：\n\n${error?.message || error}`
+          );
+
+        }
+
+
+        loadBtn.disabled =
+          false;
+
+
+        modelSelect.disabled =
+          false;
+
+
+        hfTokenInput.disabled =
+          false;
+
+
+        cancelBtn.style.display =
+          "none";
+
+
+      } finally {
+
+        downloadController =
+          null;
+
+      }
+
+    }
+
+
+    /* ============================================================
+       Cancel
+    ============================================================ */
+
+    function cancelDownload() {
+
+      if (
+        downloadController
+      ) {
+
+        downloadController.abort();
+
+        downloadController =
+          null;
+
+      }
+
+
+      loadBtn.disabled =
+        false;
+
+
+      modelSelect.disabled =
+        false;
+
+
+      hfTokenInput.disabled =
+        false;
+
+
+      cancelBtn.style.display =
+        "none";
+
+
+      setProgress(
+        0
+      );
+
+
+      statusText.textContent =
+        "下載已取消";
+
+    }
+
+
+    /* ============================================================
+       Chat
+    ============================================================ */
+
+    async function sendMessage() {
+
+      const text =
+        userInput.value.trim();
+
+
+      if (
+        !text ||
+        !llmInference ||
+        isBusy
+      ) {
+
+        return;
+
+      }
+
+
+      isBusy =
+        true;
+
+
+      userInput.value =
+        "";
+
+
+      userInput.disabled =
+        true;
+
+
+      sendBtn.disabled =
+        true;
+
+
+      /* User message */
+
+      addMessage(
+        "user",
+        text
+      );
+
+
+      /* AI message */
+
+      const aiBubble =
+        addMessage(
+          "ai",
+          "..."
+        );
+
+
+      try {
+
+        let fullOutput =
+          "";
+
+
+        await llmInference.generateResponse(
+          text,
+          (
+            partialResult,
+            done
+          ) => {
+
+            if (
+              partialResult
+            ) {
+
+              fullOutput +=
+                partialResult;
+
+            }
+
+
+            aiBubble.textContent =
+              fullOutput ||
+              "...";
+
+
+            chatContainer.scrollTop =
+              chatContainer.scrollHeight;
+
+          }
+        );
+
+
+        if (
+          !fullOutput
+        ) {
+
+          aiBubble.textContent =
+            "(模型沒有產生回應)";
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Inference error:",
+          error
+        );
+
+
+        aiBubble.textContent =
+          `推理錯誤：${error?.message || error}`;
+
+      } finally {
+
+        isBusy =
+          false;
+
+
+        userInput.disabled =
+          false;
+
+
+        sendBtn.disabled =
+          false;
+
+
+        userInput.focus();
+
+      }
+
+    }
+
+
+    /* ============================================================
+       Events
+    ============================================================ */
+
+    loadBtn.addEventListener(
+      "click",
+      loadModel
+    );
+
+
+    cancelBtn.addEventListener(
+      "click",
+      cancelDownload
+    );
+
+
+    sendBtn.addEventListener(
+      "click",
+      sendMessage
+    );
+
+
+    clearCacheBtn.addEventListener(
+      "click",
+      async () => {
+
+        await clearModelCache();
+
+        await updateCacheStatus();
+
+      }
+    );
+
+
+    modelSelect.addEventListener(
+      "change",
+      updateCacheStatus
+    );
+
+
+    userInput.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+
+          event.preventDefault();
+
+          sendMessage();
+
+        }
+
+      }
+    );
+
+
+    /* ============================================================
+       Cleanup
+    ============================================================ */
+
+    window.addEventListener(
+      "beforeunload",
+      () => {
+
+        if (
+          currentBlobUrl
+        ) {
+
+          URL.revokeObjectURL(
+            currentBlobUrl
+          );
+
+          currentBlobUrl =
+            null;
+
+        }
+
+      }
+    );
+
+
+    /* ============================================================
+       Start
+    ============================================================ */
+
+    await checkWebGPU();
+
+    await updateCacheStatus();
+
   </script>
+
 </body>
 </html>
 
