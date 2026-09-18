@@ -1,1690 +1,370 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,viewport-fit=cover"
->
-
-<title>V11 · iPhone LLM GPU Diagnostic</title>
+<meta charset="utf-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gemma WebGPU iPhone Test</title>
 
 <style>
+  * { box-sizing: border-box; }
 
-* {
-  box-sizing: border-box;
-}
+  body {
+    margin: 0;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f5f5f7;
+    color: #111;
+  }
 
-body {
-  margin: 0;
-  padding: 20px;
-  background: #0d1117;
-  color: #e6edf3;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    sans-serif;
-}
+  .box {
+    max-width: 720px;
+    margin: auto;
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  }
 
-h1 {
-  font-size: 22px;
-  margin: 0 0 8px;
-}
+  h1 {
+    font-size: 22px;
+    margin-top: 0;
+  }
 
-h2 {
-  font-size: 17px;
-  margin: 22px 0 10px;
-}
+  #status {
+    white-space: pre-wrap;
+    background: #f0f0f2;
+    border-radius: 12px;
+    padding: 12px;
+    min-height: 100px;
+    margin-bottom: 15px;
+    font-size: 14px;
+  }
 
-.sub {
-  color: #8b949e;
-  font-size: 13px;
-  line-height: 1.6;
-  margin-bottom: 18px;
-}
+  textarea {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 16px;
+  }
 
-.card {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 14px;
-}
+  button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    border: 0;
+    border-radius: 12px;
+    background: #111;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+  }
 
-input {
-  width: 100%;
-  height: 46px;
-  padding: 0 12px;
-  margin: 6px 0 10px;
-  border-radius: 9px;
-  border: 1px solid #30363d;
-  background: #0d1117;
-  color: #e6edf3;
-  font-size: 14px;
-}
+  button:disabled {
+    opacity: .4;
+  }
 
-button {
-  width: 100%;
-  min-height: 48px;
-  margin: 6px 0;
-  border: 0;
-  border-radius: 10px;
-  background: #238636;
-  color: white;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-button.secondary {
-  background: #30363d;
-}
-
-button.warning {
-  background: #9e6a03;
-}
-
-button.danger {
-  background: #da3633;
-}
-
-button:disabled {
-  opacity: 0.45;
-}
-
-.status {
-  padding: 10px;
-  border-radius: 9px;
-  background: #0d1117;
-  border: 1px solid #30363d;
-  font-size: 13px;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-#log {
-  min-height: 300px;
-  max-height: 55vh;
-  overflow: auto;
-
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    Consolas,
-    monospace;
-
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.ok {
-  color: #3fb950;
-}
-
-.bad {
-  color: #f85149;
-}
-
-.warn {
-  color: #d29922;
-}
-
-.info {
-  color: #58a6ff;
-}
-
-.small {
-  color: #8b949e;
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-.token-note {
-  color: #d29922;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.model-name {
-  font-size: 13px;
-  color: #c9d1d9;
-  padding: 8px 0;
-  line-height: 1.5;
-}
-
+  #output {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f0f0f2;
+    border-radius: 12px;
+    white-space: pre-wrap;
+    min-height: 100px;
+  }
 </style>
 </head>
 
 <body>
 
-<h1>V11 · iPhone LLM GPU Diagnostic</h1>
+<div class="box">
 
-<div class="sub">
-  Qwen 0.5B + Gemma 3 1B<br>
-  V11 目的：分離 Safari / WebGPU / MediaPipe / 模型 GPU 初始化問題。
-</div>
+  <h1>Gemma 3 1B · WebGPU Test</h1>
 
+  <div id="status">正在檢查 WebGPU…</div>
 
-<!-- ======================================================
-     ① WEBGPU
-====================================================== -->
+  <textarea id="prompt"
+    placeholder="輸入問題，例如：用一句話介紹台灣。"></textarea>
 
-<div class="card">
+  <button id="loadBtn">
+    載入 Gemma 3 1B
+  </button>
 
-<h2>① WebGPU Device</h2>
+  <button id="runBtn" disabled>
+    開始生成
+  </button>
 
-<button id="gpuBtn">
-  測試 WebGPU Device
-</button>
-
-<div id="gpuStatus" class="status">
-尚未測試
-</div>
+  <div id="output"></div>
 
 </div>
-
-
-<!-- ======================================================
-     ② HF TOKEN
-====================================================== -->
-
-<div class="card">
-
-<h2>② Hugging Face Access Token</h2>
-
-<input
-  id="hfToken"
-  type="password"
-  autocomplete="off"
-  placeholder="hf_xxxxxxxxxxxxxxxxx"
-/>
-
-<div class="token-note">
-Gemma 需要 Hugging Face Access Token。
-</div>
-
-<div class="small">
-Token 只存在目前頁面的記憶體中，
-不寫入 localStorage、OPFS 或模型檔案。
-</div>
-
-</div>
-
-
-<!-- ======================================================
-     ③ MODELS
-====================================================== -->
-
-<div class="card">
-
-<h2>③ 模型</h2>
-
-<div class="model-name">
-
-<b>Qwen</b><br>
-Qwen2.5-0.5B-Instruct<br>
-q8_ekv1280
-
-</div>
-
-<button
-  id="downloadQwenBtn"
-  class="secondary"
->
-  下載 Qwen 0.5B
-</button>
-
-
-<hr style="
-  border:0;
-  border-top:1px solid #30363d;
-  margin:16px 0;
-">
-
-
-<div class="model-name">
-
-<b>Gemma V11</b><br>
-Gemma3-1B-IT<br>
-seq128 / q4_block128 / ekv1280<br>
-約 676 MB
-
-</div>
-
-<button
-  id="downloadGemmaBtn"
-  class="secondary"
->
-  下載 Gemma V11
-</button>
-
-
-<button
-  id="deleteBtn"
-  class="warning"
->
-  清除所有模型
-</button>
-
-
-<div
-  id="modelStatus"
-  class="status"
->
-尚未檢查 OPFS
-</div>
-
-</div>
-
-
-<!-- ======================================================
-     ④ INIT
-====================================================== -->
-
-<div class="card">
-
-<h2>④ GPU Initialization</h2>
-
-<button id="qwenBtn">
-  Qwen 0.5B · GPU 初始化
-</button>
-
-<button id="gemmaBtn">
-  Gemma V11 · GPU 初始化
-</button>
-
-
-<div
-  id="initStatus"
-  class="status"
->
-尚未開始
-</div>
-
-</div>
-
-
-<!-- ======================================================
-     ⑤ LOG
-====================================================== -->
-
-<div class="card">
-
-<h2>⑤ Diagnostic Log</h2>
-
-<div
-  id="log"
-  class="status"
-></div>
-
-<div
-  class="small"
-  style="margin-top:10px;"
->
-如果按下 GPU 初始化後 Safari 整頁重新載入，
-重新進入 V11 後會顯示上一輪停在哪個 Stage。
-</div>
-
-</div>
-
 
 <script type="module">
 
+const statusEl = document.getElementById("status");
+const outputEl = document.getElementById("output");
+const loadBtn = document.getElementById("loadBtn");
+const runBtn = document.getElementById("runBtn");
+const promptEl = document.getElementById("prompt");
 
-/* ======================================================
-   CONFIG
-====================================================== */
+let engine = null;
 
-const MP_VERSION = "0.10.29";
-
-
-/*
- * Qwen
- */
-
-const QWEN_URL =
-"https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task";
-
-
-const QWEN_FILE =
-"v11-qwen-0.5b.task";
-
-
-/*
- * Gemma V11
- *
- * 注意：
- * 不再使用：
- *
- * gemma3-1b-it-int4-web.task
- *
- * 改用：
- *
- * Gemma3-1B-IT_seq128_q4_block128_ekv1280.task
- */
-
-const GEMMA_URL =
-"https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/Gemma3-1B-IT_seq128_q4_block128_ekv1280.task";
-
-
-const GEMMA_FILE =
-"v11-gemma3-1b-seq128-q4.task";
-
-
-const STAGE_KEY =
-"v11_stage";
-
-
-const TIME_KEY =
-"v11_stage_time";
-
-
-/* ======================================================
-   DOM
-====================================================== */
-
-const logEl =
-document.getElementById("log");
-
-
-const gpuStatus =
-document.getElementById("gpuStatus");
-
-
-const modelStatus =
-document.getElementById("modelStatus");
-
-
-const initStatus =
-document.getElementById("initStatus");
-
-
-const hfTokenInput =
-document.getElementById("hfToken");
-
-
-/* ======================================================
-   RUNTIME
-====================================================== */
-
-let FilesetResolver = null;
-
-let LlmInference = null;
-
-let genai = null;
-
-let currentLLM = null;
-
-
-/* ======================================================
-   LOG
-====================================================== */
-
-function now() {
-
-  return new Date().toLocaleTimeString();
-
+function log(text) {
+  statusEl.textContent += "\\n" + text;
 }
 
+function setStatus(text) {
+  statusEl.textContent = text;
+}
 
-function log(
-  message,
-  type = ""
-) {
+async function checkGPU() {
 
-  const line =
-    `[${now()}] ${message}`;
+  setStatus("檢查 WebGPU…");
 
-
-  const div =
-    document.createElement("div");
-
-
-  if (type) {
-    div.className = type;
+  if (!navigator.gpu) {
+    throw new Error(
+      "這個 Safari 沒有 navigator.gpu，WebGPU 不可用。"
+    );
   }
 
+  const adapter = await navigator.gpu.requestAdapter();
 
-  div.textContent =
-    line;
+  if (!adapter) {
+    throw new Error(
+      "navigator.gpu 存在，但 requestAdapter() 失敗。"
+    );
+  }
 
+  log("✓ WebGPU adapter");
 
-  logEl.appendChild(div);
+  const device = await adapter.requestDevice();
 
+  if (!device) {
+    throw new Error(
+      "requestDevice() 失敗。"
+    );
+  }
 
-  logEl.scrollTop =
-    logEl.scrollHeight;
-
-
-  console.log(line);
-
-}
-
-
-/* ======================================================
-   STAGE
-====================================================== */
-
-function setStage(stage) {
-
-  localStorage.setItem(
-    STAGE_KEY,
-    stage
-  );
-
-
-  localStorage.setItem(
-    TIME_KEY,
-    new Date().toISOString()
-  );
-
+  log("✓ WebGPU device");
 
   log(
-    `Stage → ${stage}`,
-    "info"
+    "maxBufferSize = " +
+    Number(device.limits.maxBufferSize) / 1024 / 1024 +
+    " MB"
   );
 
+  log(
+    "maxStorageBufferBindingSize = " +
+    Number(device.limits.maxStorageBufferBindingSize) / 1024 / 1024 +
+    " MB"
+  );
+
+  device.destroy();
+
+  log("✓ WebGPU 基本測試完成");
 }
 
 
-function clearStage() {
+async function loadGemma() {
 
-  localStorage.removeItem(
-    STAGE_KEY
-  );
+  loadBtn.disabled = true;
 
+  try {
 
-  localStorage.removeItem(
-    TIME_KEY
-  );
+    setStatus("開始初始化…");
 
-}
+    await checkGPU();
 
+    log("");
+    log("載入 gemma-webgpu…");
 
-function checkPreviousStage() {
+    /*
+     * 使用官方 npm package 的 ESM CDN。
+     *
+     * 這裡刻意不使用：
+     * - MediaPipe
+     * - LiteRT
+     * - WASM LLM runtime
+     * - Transformers.js
+     * - ONNX Runtime
+     */
 
-  const stage =
-    localStorage.getItem(
-      STAGE_KEY
+    const {
+      createGemmaEngine
+    } = await import(
+      "https://esm.sh/gemma-webgpu"
     );
 
+    log("✓ gemma-webgpu JS 載入完成");
 
-  if (!stage) {
+    log("");
+    log("開始載入 Gemma 3 1B…");
+    log("第一次需要下載約 1 GB，請保持 Safari 前景。");
+
+    engine = await createGemmaEngine({
+
+      model: "1b",
+
+      contextLength: 1024,
+
+      onProgress: (p) => {
+
+        if (!p) return;
+
+        let text = "";
+
+        if (p.status) {
+          text += p.status;
+        }
+
+        if (
+          typeof p.loaded === "number" &&
+          typeof p.total === "number" &&
+          p.total > 0
+        ) {
+
+          const percent =
+            p.loaded / p.total * 100;
+
+          text +=
+            "\\n" +
+            (percent).toFixed(1) +
+            "% (" +
+            (p.loaded / 1024 / 1024).toFixed(0) +
+            " / " +
+            (p.total / 1024 / 1024).toFixed(0) +
+            " MB)";
+        }
+
+        statusEl.textContent = text;
+      }
+    });
+
+    log("");
+    log("✓ Gemma 3 1B 初始化成功");
+
+    if (engine.config) {
+      log("");
+      log(
+        "Model config:\\n" +
+        JSON.stringify(engine.config, null, 2)
+      );
+    }
+
+    runBtn.disabled = false;
+
+  } catch (err) {
+
+    console.error(err);
+
+    statusEl.textContent +=
+      "\\n\\n❌ 初始化失敗\\n" +
+      (err?.stack || err?.message || String(err));
+
+    loadBtn.disabled = false;
+  }
+}
+
+
+async function generate() {
+
+  if (!engine) {
     return;
   }
 
+  const prompt = promptEl.value.trim();
 
-  const time =
-    localStorage.getItem(
-      TIME_KEY
-    );
-
-
-  let age = "";
-
-
-  if (time) {
-
-    const diff =
-      Math.round(
-        (
-          Date.now() -
-          new Date(time).getTime()
-        ) / 1000
-      );
-
-
-    age =
-      `${diff} 秒前`;
-
-  }
-
-
-  log(
-    `⚠️ 上一輪未完成：${stage}` +
-    `${age ? " · " + age : ""}`,
-    "warn"
-  );
-
-
-  initStatus.textContent =
-    `上一輪未完成：${stage}\n` +
-    `${age ? "時間：" + age : ""}\n\n` +
-    `如果 Safari 是整頁重載，` +
-    `通常不是普通 JavaScript exception。`;
-
-}
-
-
-/* ======================================================
-   DEVICE INFO
-====================================================== */
-
-function printDeviceInfo() {
-
-  log(
-    `User-Agent：${navigator.userAgent}`,
-    "info"
-  );
-
-
-  log(
-    `deviceMemory：${
-      navigator.deviceMemory ?? "unknown"
-    }`
-  );
-
-
-  log(
-    `hardwareConcurrency：${
-      navigator.hardwareConcurrency ?? "unknown"
-    }`
-  );
-
-
-  log(
-    `crossOriginIsolated：${
-      self.crossOriginIsolated
-    }`
-  );
-
-}
-
-
-/* ======================================================
-   MEDIAPIPE
-====================================================== */
-
-async function loadMediaPipe() {
-
-  if (genai) {
+  if (!prompt) {
+    alert("請先輸入問題");
     return;
   }
 
+  runBtn.disabled = true;
 
-  setStage(
-    "LOAD_MEDIAPIPE"
-  );
-
-
-  log(
-    `載入 MediaPipe Tasks GenAI ${MP_VERSION} ...`
-  );
-
+  outputEl.textContent = "";
 
   try {
 
-    const module =
-      await import(
-        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`
-      );
+    engine.addUserMessage(prompt);
 
+    let result = "";
 
-    FilesetResolver =
-      module.FilesetResolver;
+    const start = performance.now();
 
-
-    LlmInference =
-      module.LlmInference;
-
-
-    log(
-      "MediaPipe JS module ✓",
-      "ok"
-    );
-
-
-    genai =
-      await FilesetResolver.forGenAiTasks(
-        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`
-      );
-
-
-    log(
-      "MediaPipe WASM ✓",
-      "ok"
-    );
-
-
-    clearStage();
-
-
-  } catch (err) {
-
-    log(
-      `MediaPipe 載入失敗：${err?.stack || err}`,
-      "bad"
-    );
-
-
-    throw err;
-
-  }
-
-}
-
-
-/* ======================================================
-   OPFS
-====================================================== */
-
-async function getOPFS() {
-
-  if (
-    !navigator.storage ||
-    !navigator.storage.getDirectory
-  ) {
-
-    throw new Error(
-      "此 Safari 不支援 OPFS"
-    );
-
-  }
-
-
-  return await
-    navigator.storage.getDirectory();
-
-}
-
-
-async function fileExists(name) {
-
-  const root =
-    await getOPFS();
-
-
-  try {
-
-    await root.getFileHandle(
-      name
-    );
-
-
-    return true;
-
-  } catch {
-
-    return false;
-
-  }
-
-}
-
-
-async function getOPFSFile(name) {
-
-  const root =
-    await getOPFS();
-
-
-  const handle =
-    await root.getFileHandle(
-      name
-    );
-
-
-  return await handle.getFile();
-
-}
-
-
-/* ======================================================
-   MODEL STATUS
-====================================================== */
-
-async function refreshModelStatus() {
-
-  try {
-
-    const qwen =
-      await fileExists(
-        QWEN_FILE
-      );
-
-
-    const gemma =
-      await fileExists(
-        GEMMA_FILE
-      );
-
-
-    modelStatus.textContent =
-      `Qwen 0.5B：${
-        qwen
-          ? "✓ 已下載"
-          : "未下載"
-      }\n` +
-
-      `Gemma V11：${
-        gemma
-          ? "✓ 已下載"
-          : "未下載"
-      }`;
-
-
-  } catch (err) {
-
-    modelStatus.textContent =
-      `OPFS 錯誤：${err}`;
-
-  }
-
-}
-
-
-/* ======================================================
-   TOKEN
-====================================================== */
-
-function getHFToken() {
-
-  const token =
-    hfTokenInput.value.trim();
-
-
-  if (!token) {
-
-    throw new Error(
-      "Gemma 需要 Hugging Face Access Token"
-    );
-
-  }
-
-
-  return token;
-
-}
-
-
-/* ======================================================
-   DOWNLOAD
-====================================================== */
-
-async function downloadModel(
-  url,
-  filename,
-  label,
-  token = null
-) {
-
-  const root =
-    await getOPFS();
-
-
-  log(
-    `開始下載 ${label}`,
-    "info"
-  );
-
-
-  const headers = {};
-
-
-  if (token) {
-
-    headers.Authorization =
-      `Bearer ${token}`;
-
-    log(
-      "Hugging Face Authorization ✓"
-    );
-
-  }
-
-
-  const response =
-    await fetch(
-      url,
-      {
-        method: "GET",
-
-        headers,
-
-        cache: "no-store",
-
-        redirect: "follow"
-      }
-    );
-
-
-  if (!response.ok) {
-
-    let body = "";
-
-
-    try {
-
-      body =
-        await response.text();
-
-    } catch {}
-
-
-    if (
-      response.status === 401
+    for await (
+      const token of engine.generate({
+        temperature: 0.7,
+        topP: 0.9,
+        maxTokens: 128
+      })
     ) {
 
-      throw new Error(
-        "HTTP 401：Token 無效或沒有 Gemma Access。"
-      );
+      result += token;
 
+      outputEl.textContent = result;
     }
 
+    const seconds =
+      (performance.now() - start) / 1000;
 
-    if (
-      response.status === 403
-    ) {
-
-      throw new Error(
-        "HTTP 403：Hugging Face 拒絕存取。"
-      );
-
-    }
-
-
-    throw new Error(
-      `HTTP ${response.status} ${response.statusText}\n` +
-      body.slice(0, 500)
-    );
-
-  }
-
-
-  if (!response.body) {
-
-    throw new Error(
-      "response.body 不存在"
-    );
-
-  }
-
-
-  const total =
-    Number(
-      response.headers
-        .get("content-length") || 0
-    );
-
-
-  if (total) {
-
-    log(
-      `大小：${
-        (
-          total /
-          1024 /
-          1024
-        ).toFixed(1)
-      } MB`
-    );
-
-  }
-
-
-  const handle =
-    await root.getFileHandle(
-      filename,
-      {
-        create: true
-      }
-    );
-
-
-  const writable =
-    await handle.createWritable();
-
-
-  const reader =
-    response.body.getReader();
-
-
-  let received = 0;
-
-  let lastReport = 0;
-
-
-  try {
-
-    while (true) {
-
-      const {
-        value,
-        done
-      } =
-        await reader.read();
-
-
-      if (done) {
-        break;
-      }
-
-
-      if (value) {
-
-        await writable.write(
-          value
-        );
-
-
-        received +=
-          value.byteLength;
-
-      }
-
-
-      const current =
-        Date.now();
-
-
-      if (
-        current - lastReport >
-        1000
-      ) {
-
-        lastReport =
-          current;
-
-
-        const mb =
-          (
-            received /
-            1024 /
-            1024
-          ).toFixed(1);
-
-
-        if (total) {
-
-          const pct =
-            received /
-            total *
-            100;
-
-
-          log(
-            `${label}：${pct.toFixed(1)}% ` +
-            `(${mb} MB)`
-          );
-
-        } else {
-
-          log(
-            `${label}：${mb} MB`
-          );
-
-        }
-
-      }
-
-    }
-
-
-    await writable.close();
-
+    outputEl.textContent +=
+      "\\n\\n---\\n" +
+      "生成時間：" +
+      seconds.toFixed(2) +
+      " 秒";
 
   } catch (err) {
 
-    try {
-      await writable.abort();
-    } catch {}
+    console.error(err);
 
+    outputEl.textContent =
+      "❌ 生成失敗\\n\\n" +
+      (err?.stack || err?.message || String(err));
 
-    throw err;
+  } finally {
 
+    runBtn.disabled = false;
   }
-
-
-  log(
-    `${label} 完成：${
-      (
-        received /
-        1024 /
-        1024
-      ).toFixed(1)
-    } MB`,
-    "ok"
-  );
-
-
-  await refreshModelStatus();
-
 }
 
 
-/* ======================================================
-   DELETE
-====================================================== */
-
-async function deleteFile(name) {
-
-  const root =
-    await getOPFS();
-
-
-  try {
-
-    await root.removeEntry(
-      name
-    );
-
-
-    log(
-      `刪除：${name}`,
-      "ok"
-    );
-
-  } catch {}
-
-}
-
-
-async function deleteAllModels() {
-
-  try {
-
-    if (currentLLM) {
-
-      try {
-        currentLLM.close();
-      } catch {}
-
-
-      currentLLM = null;
-
-    }
-
-
-    await deleteFile(
-      QWEN_FILE
-    );
-
-
-    await deleteFile(
-      GEMMA_FILE
-    );
-
-
-    await refreshModelStatus();
-
-
-    log(
-      "所有模型已清除",
-      "ok"
-    );
-
-
-  } catch (err) {
-
-    log(
-      `清除失敗：${err?.stack || err}`,
-      "bad"
-    );
-
-  }
-
-}
-
-
-/* ======================================================
-   WEBGPU
-====================================================== */
-
-async function testWebGPU() {
-
-  setStage(
-    "WEBGPU_DEVICE_TEST"
-  );
-
-
-  gpuStatus.textContent =
-    "WebGPU 測試中...";
-
-
-  try {
-
-    if (!navigator.gpu) {
-
-      throw new Error(
-        "navigator.gpu 不存在"
-      );
-
-    }
-
-
-    log(
-      "navigator.gpu ✓",
-      "ok"
-    );
-
-
-    const adapter =
-      await navigator.gpu.requestAdapter({
-        powerPreference:
-          "high-performance"
-      });
-
-
-    if (!adapter) {
-
-      throw new Error(
-        "requestAdapter() = null"
-      );
-
-    }
-
-
-    log(
-      "WebGPU Adapter ✓",
-      "ok"
-    );
-
-
-    log(
-      `maxStorageBufferBindingSize = ${
-        adapter.limits
-          .maxStorageBufferBindingSize
-      }`
-    );
-
-
-    log(
-      `maxBufferSize = ${
-        adapter.limits.maxBufferSize
-      }`
-    );
-
-
-    const device =
-      await adapter.requestDevice();
-
-
-    log(
-      "WebGPU Device ✓",
-      "ok"
-    );
-
-
-    const buffer =
-      device.createBuffer({
-        size: 4096,
-
-        usage:
-          GPUBufferUsage.STORAGE |
-          GPUBufferUsage.COPY_DST
-      });
-
-
-    buffer.destroy();
-
-
-    log(
-      "GPU buffer ✓",
-      "ok"
-    );
-
-
-    gpuStatus.textContent =
-      "✓ WebGPU Adapter\n" +
-      "✓ WebGPU Device\n" +
-      "✓ GPU Buffer\n\n" +
-      "基本 WebGPU 測試通過。";
-
-
-    clearStage();
-
-
-  } catch (err) {
-
-    gpuStatus.textContent =
-      `✗ WebGPU 失敗\n\n${err}`;
-
-
-    log(
-      `WebGPU FAIL：${err?.stack || err}`,
-      "bad"
-    );
-
-  }
-
-}
-
-
-/* ======================================================
-   MODEL INITIALIZATION
-====================================================== */
-
-async function initModel(
-  filename,
-  label
-) {
-
-  await loadMediaPipe();
-
-
-  const exists =
-    await fileExists(
-      filename
-    );
-
-
-  if (!exists) {
-
-    throw new Error(
-      `${label} 尚未下載`
-    );
-
-  }
-
-
-  const file =
-    await getOPFSFile(
-      filename
-    );
-
-
-  log(
-    `${label} 檔案大小：${
-      (
-        file.size /
-        1024 /
-        1024
-      ).toFixed(1)
-    } MB`
-  );
-
-
-  /*
-   * 不轉 arrayBuffer。
-   * 不建立 Blob。
-   * 不建立 chunks[]。
-   */
-
-  const reader =
-    file.stream().getReader();
-
-
-  setStage(
-    `${label} · CREATE_LLM_GPU`
-  );
-
-
-  log(
-    `${label} → createFromOptions()`,
-    "warn"
-  );
-
-
-  const start =
-    performance.now();
-
-
-  try {
-
-    const llm =
-      await LlmInference.createFromOptions(
-        genai,
-        {
-          baseOptions: {
-
-            modelAssetBuffer:
-              reader,
-
-            delegate:
-              "GPU"
-
-          },
-
-          maxTokens: 64,
-
-          topK: 1,
-
-          temperature: 0,
-
-          randomSeed: 1
-
-        }
-      );
-
-
-    const elapsed =
-      (
-        performance.now() -
-        start
-      ) / 1000;
-
-
-    clearStage();
-
-
-    log(
-      `${label} GPU 初始化成功 ✓ ` +
-      `(${elapsed.toFixed(1)} 秒)`,
-      "ok"
-    );
-
-
-    return llm;
-
-
-  } catch (err) {
-
-    log(
-      `${label} JS error：${err?.stack || err}`,
-      "bad"
-    );
-
-
-    throw err;
-
-  }
-
-}
-
-
-/* ======================================================
-   QWEN
-====================================================== */
-
-async function testQwen() {
-
-  initStatus.textContent =
-    "Qwen GPU 初始化中...\n\n" +
-    "不要切換 App。";
-
-
-  log(
-    "================================"
-  );
-
-
-  log(
-    "QWEN GPU TEST",
-    "info"
-  );
-
-
-  try {
-
-    if (currentLLM) {
-
-      try {
-        currentLLM.close();
-      } catch {}
-
-
-      currentLLM = null;
-
-    }
-
-
-    currentLLM =
-      await initModel(
-        QWEN_FILE,
-        "QWEN"
-      );
-
-
-    initStatus.textContent =
-      "✓ Qwen 0.5B GPU 初始化成功";
-
-
-    log(
-      "QWEN PASS ✓",
-      "ok"
-    );
-
-
-  } catch (err) {
-
-    initStatus.textContent =
-      `Qwen 初始化失敗：\n${
-        err?.message || err
-      }`;
-
-
-    log(
-      `QWEN FAIL：${err?.stack || err}`,
-      "bad"
-    );
-
-  }
-
-}
-
-
-/* ======================================================
-   GEMMA
-====================================================== */
-
-async function testGemma() {
-
-  initStatus.textContent =
-    "Gemma V11 GPU 初始化中...\n\n" +
-    "這次使用 seq128 / q4_block128 / ekv1280。";
-
-
-  log(
-    "================================"
-  );
-
-
-  log(
-    "GEMMA V11 GPU TEST",
-    "info"
-  );
-
-
-  try {
-
-    if (currentLLM) {
-
-      try {
-        currentLLM.close();
-      } catch {}
-
-
-      currentLLM = null;
-
-    }
-
-
-    currentLLM =
-      await initModel(
-        GEMMA_FILE,
-        "GEMMA_V11"
-      );
-
-
-    initStatus.textContent =
-      "✓ Gemma V11 GPU 初始化成功";
-
-
-    log(
-      "GEMMA V11 PASS ✓",
-      "ok"
-    );
-
-
-  } catch (err) {
-
-    initStatus.textContent =
-      `Gemma V11 初始化失敗：\n${
-        err?.message || err
-      }`;
-
-
-    log(
-      `GEMMA V11 FAIL：${err?.stack || err}`,
-      "bad"
-    );
-
-  }
-
-}
-
-
-/* ======================================================
-   BUTTONS
-====================================================== */
-
-document
-.getElementById("gpuBtn")
-.onclick =
-async () => {
-
-  await testWebGPU();
-
-};
-
-
-document
-.getElementById("downloadQwenBtn")
-.onclick =
-async () => {
-
-  try {
-
-    setStage(
-      "DOWNLOAD_QWEN"
-    );
-
-
-    await downloadModel(
-      QWEN_URL,
-      QWEN_FILE,
-      "Qwen 0.5B"
-    );
-
-
-    clearStage();
-
-
-  } catch (err) {
-
-    log(
-      `Qwen 下載失敗：${err?.stack || err}`,
-      "bad"
-    );
-
-
-    clearStage();
-
-  }
-
-};
-
-
-document
-.getElementById("downloadGemmaBtn")
-.onclick =
-async () => {
-
-  try {
-
-    const token =
-      getHFToken();
-
-
-    setStage(
-      "DOWNLOAD_GEMMA_V11"
-    );
-
-
-    await downloadModel(
-      GEMMA_URL,
-      GEMMA_FILE,
-      "Gemma V11",
-      token
-    );
-
-
-    clearStage();
-
-
-  } catch (err) {
-
-    log(
-      `Gemma V11 下載失敗：${err?.stack || err}`,
-      "bad"
-    );
-
-
-    clearStage();
-
-  }
-
-};
-
-
-document
-.getElementById("deleteBtn")
-.onclick =
-async () => {
-
-  await deleteAllModels();
-
-};
-
-
-document
-.getElementById("qwenBtn")
-.onclick =
-async () => {
-
-  await testQwen();
-
-};
-
-
-document
-.getElementById("gemmaBtn")
-.onclick =
-async () => {
-
-  await testGemma();
-
-};
-
-
-/* ======================================================
-   START
-====================================================== */
-
-checkPreviousStage();
-
-printDeviceInfo();
-
-refreshModelStatus();
-
-
-log(
-  "V11 ready ✓",
-  "ok"
+loadBtn.addEventListener(
+  "click",
+  loadGemma
+);
+
+runBtn.addEventListener(
+  "click",
+  generate
 );
 
 
-log(
-  "① 先測 WebGPU",
-  "info"
-);
+/*
+ * 頁面一開始只做 GPU 檢查。
+ * 不自動載入 1GB 模型。
+ */
 
+(async () => {
 
-log(
-  "② 下載 Qwen / Gemma V11",
-  "info"
-);
+  try {
 
+    await checkGPU();
 
-log(
-  "③ 分別測兩個 GPU initialization",
-  "info"
-);
+    log("");
+    log(
+      "請按「載入 Gemma 3 1B」開始測試。"
+    );
+
+  } catch (err) {
+
+    statusEl.textContent =
+      "❌ WebGPU 檢查失敗\\n\\n" +
+      (err?.stack || err?.message || String(err));
+  }
+
+})();
 
 </script>
 
