@@ -15,7 +15,7 @@
 
 <meta name="theme-color" content="#111827">
 
-<title>V8 · Qwen 0.5B Safari GPU Diagnostic</title>
+<title>V9 · Qwen 0.5B Init Diagnostic</title>
 
 <style>
 
@@ -27,6 +27,7 @@ body {
   margin: 0;
   background: #111827;
   color: #f9fafb;
+
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -53,7 +54,7 @@ h1 {
 .subtitle {
   color: #9ca3af;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.55;
   margin-bottom: 18px;
 }
 
@@ -61,8 +62,14 @@ h1 {
   background: #1f2937;
   border: 1px solid #374151;
   border-radius: 14px;
+
   padding: 15px;
   margin-bottom: 12px;
+}
+
+.title {
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .status {
@@ -91,24 +98,24 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-button.primary {
+button:disabled {
+  opacity: .45;
+}
+
+.primary {
   background: #2563eb;
 }
 
-button.green {
+.green {
   background: #166534;
 }
 
-button.orange {
+.orange {
   background: #92400e;
 }
 
-button.red {
+.red {
   background: #7f1d1d;
-}
-
-button:disabled {
-  opacity: .45;
 }
 
 .log {
@@ -144,7 +151,7 @@ button:disabled {
   color: #fcd34d;
 }
 
-.error {
+.err {
   color: #fca5a5;
 }
 
@@ -158,11 +165,6 @@ button:disabled {
   line-height: 1.5;
 }
 
-.section-title {
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
 </style>
 </head>
 
@@ -170,12 +172,12 @@ button:disabled {
 
 <main>
 
-<h1>V8 · Qwen 0.5B GPU Diagnostic</h1>
+<h1>V9 · Qwen 0.5B 初始化診斷</h1>
 
 <div class="subtitle">
-這一版只測 Qwen 0.5B。<br>
-不載入 Gemma、不建立聊天、不進行推論。<br>
-目的：確認 iPhone Safari 是否能完成 MediaPipe + LiteRT + WebGPU 初始化。
+只測 Qwen 0.5B。<br>
+不載入 Gemma、不建立聊天、不使用 OPFS。<br>
+目的：區分 modelPath 載入問題，與 modelBuffer / GPU 初始化問題。
 </div>
 
 
@@ -185,26 +187,27 @@ button:disabled {
 
 <div class="card">
 
-  <div class="section-title">
-    目前狀態
+  <div class="title">
+    狀態
   </div>
 
   <div id="status" class="status">
-V8 已準備。
+V9 準備完成。
   </div>
 
 </div>
 
 
 <!-- =====================================================
-     TEST BUTTONS
+     BUTTONS
 ===================================================== -->
 
 <div class="card">
 
-  <div class="section-title">
-    測試
+  <div class="title">
+    診斷
   </div>
+
 
   <button
     id="gpuBtn"
@@ -217,23 +220,23 @@ V8 已準備。
   <button
     id="mpBtn"
   >
-    ② MediaPipe / WASM 診斷
+    ② MediaPipe / WASM
   </button>
 
 
   <button
-    id="remoteBtn"
+    id="pathBtn"
     class="green"
   >
-    ③ 遠端 Qwen GPU 初始化
+    ③ A：createFromModelPath
   </button>
 
 
   <button
-    id="localBtn"
+    id="bufferBtn"
     class="orange"
   >
-    ④ 本地 OPFS Qwen GPU 初始化
+    ④ B：fetch + modelAssetBuffer
   </button>
 
 
@@ -241,7 +244,7 @@ V8 已準備。
     id="resetBtn"
     class="red"
   >
-    清除診斷 Marker
+    清除 Marker
   </button>
 
 </div>
@@ -253,17 +256,20 @@ V8 已準備。
 
 <div class="card">
 
-  <div class="section-title">
+  <div class="title">
     診斷紀錄
   </div>
 
-  <div id="log" class="log"></div>
+  <div
+    id="log"
+    class="log"
+  ></div>
 
 </div>
 
 
 <!-- =====================================================
-     MODEL INFO
+     INFO
 ===================================================== -->
 
 <div class="card">
@@ -275,22 +281,23 @@ V8 已準備。
 
     <br><br>
 
-    Qwen:
+    Model:
     Qwen2.5-0.5B-Instruct
 
     <br><br>
 
-    V8 不會自動下載模型。
+    A 測試：
+    createFromModelPath()
 
     <br>
 
-    本地測試需要先從 V7/V8 下載好的 OPFS
-    Qwen 模型。
+    B 測試：
+    fetch() → ReadableStreamDefaultReader →
+    createFromOptions()
 
   </div>
 
 </div>
-
 
 </main>
 
@@ -301,10 +308,13 @@ V8 已準備。
    CONFIG
 ========================================================= */
 
-const MP_VERSION = "0.10.29";
+const MP_VERSION =
+  "0.10.29";
+
 
 const MP_MODULE_URL =
   `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`;
+
 
 const WASM_URL =
   `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`;
@@ -314,10 +324,6 @@ const QWEN_URL =
   "https://huggingface.co/litert-community/" +
   "Qwen2.5-0.5B-Instruct/resolve/main/" +
   "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task";
-
-
-const OPFS_NAME =
-  "v7-qwen-05b.task";
 
 
 /* =========================================================
@@ -336,18 +342,18 @@ const gpuBtn =
 const mpBtn =
   document.getElementById("mpBtn");
 
-const remoteBtn =
-  document.getElementById("remoteBtn");
+const pathBtn =
+  document.getElementById("pathBtn");
 
-const localBtn =
-  document.getElementById("localBtn");
+const bufferBtn =
+  document.getElementById("bufferBtn");
 
 const resetBtn =
   document.getElementById("resetBtn");
 
 
 /* =========================================================
-   STATE
+   MEDIAPIPE STATE
 ========================================================= */
 
 let FilesetResolver = null;
@@ -358,76 +364,17 @@ let llm = null;
 
 
 /* =========================================================
-   MARKERS
-========================================================= */
-
-const MARKER_KEY =
-  "v8_init_marker";
-
-const MARKER_TIME =
-  "v8_init_time";
-
-
-/* =========================================================
-   LOG
-========================================================= */
-
-function timeString() {
-
-  return new Date().toLocaleTimeString();
-
-}
-
-
-function log(message, type = "") {
-
-  const div =
-    document.createElement("div");
-
-  div.textContent =
-    `[${timeString()}] ${message}`;
-
-  if (type) {
-    div.className = type;
-  }
-
-  logEl.appendChild(div);
-
-  logEl.scrollTop =
-    logEl.scrollHeight;
-
-  console.log(message);
-}
-
-
-function setStatus(message) {
-
-  statusEl.textContent =
-    message;
-
-}
-
-
-function errorMessage(error) {
-
-  if (!error) {
-    return "Unknown error";
-  }
-
-  return String(
-    error.stack ||
-    error.message ||
-    error
-  );
-
-}
-
-
-/* =========================================================
    MARKER
 ========================================================= */
 
-function setMarker(name) {
+const MARKER_KEY =
+  "v9_marker";
+
+const MARKER_TIME =
+  "v9_marker_time";
+
+
+function marker(name) {
 
   try {
 
@@ -463,50 +410,111 @@ function clearMarker() {
 }
 
 
-function showPreviousMarker() {
+function previousMarker() {
 
   try {
 
-    const marker =
+    const m =
       localStorage.getItem(
         MARKER_KEY
       );
 
-    const time =
+    const t =
       localStorage.getItem(
         MARKER_TIME
       );
 
-    if (!marker) {
+    if (!m) {
       return;
     }
 
-    let ageText = "";
+    let age = "";
 
-    if (time) {
+    if (t) {
 
-      const age =
-        Date.now() -
-        Number(time);
+      age =
+        `\n${Math.round(
+          (Date.now() - Number(t)) / 1000
+        )} 秒前`;
 
-      ageText =
-        `\n時間：${Math.round(age / 1000)} 秒前`;
     }
 
     log(
-      `⚠️ 偵測到上一輪未完成：${marker}${ageText}`,
+      "⚠️ 上一輪沒有正常完成：\n" +
+      m +
+      age,
       "warn"
     );
 
     setStatus(
-      "⚠️ 上一輪 Safari 可能在這個階段終止：\n\n" +
-      marker +
-      ageText +
-      "\n\n" +
-      "請依照按鈕重新測試。"
+      "⚠️ 偵測到上一輪 Safari 可能在以下階段終止：\n\n" +
+      m +
+      age
     );
 
   } catch (_) {}
+
+}
+
+
+/* =========================================================
+   LOG
+========================================================= */
+
+function now() {
+
+  return new Date()
+    .toLocaleTimeString();
+
+}
+
+
+function log(
+  message,
+  type = ""
+) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent =
+    `[${now()}] ${message}`;
+
+  if (type) {
+    div.className = type;
+  }
+
+  logEl.appendChild(div);
+
+  logEl.scrollTop =
+    logEl.scrollHeight;
+
+  console.log(message);
+
+}
+
+
+function setStatus(
+  message
+) {
+
+  statusEl.textContent =
+    message;
+
+}
+
+
+function errText(error) {
+
+  if (!error) {
+    return "Unknown error";
+  }
+
+  return String(
+    error.stack ||
+    error.message ||
+    error
+  );
 
 }
 
@@ -523,6 +531,7 @@ async function loadMediaPipe() {
   ) {
 
     return;
+
   }
 
 
@@ -531,15 +540,17 @@ async function loadMediaPipe() {
   );
 
 
-  const module =
-    await import(MP_MODULE_URL);
+  const mod =
+    await import(
+      MP_MODULE_URL
+    );
 
 
   FilesetResolver =
-    module.FilesetResolver;
+    mod.FilesetResolver;
 
   LlmInference =
-    module.LlmInference;
+    mod.LlmInference;
 
 
   if (
@@ -548,8 +559,9 @@ async function loadMediaPipe() {
   ) {
 
     throw new Error(
-      "找不到 FilesetResolver / LlmInference"
+      "MediaPipe API 不完整"
     );
+
   }
 
 
@@ -562,42 +574,43 @@ async function loadMediaPipe() {
 
 
 /* =========================================================
-   GPU DIAGNOSTIC
+   GPU
 ========================================================= */
 
-gpuBtn.onclick = async () => {
+gpuBtn.onclick =
+async () => {
 
   gpuBtn.disabled = true;
 
   try {
 
+    marker(
+      "GPU · requestAdapter"
+    );
+
+
     setStatus(
       "正在檢查 WebGPU..."
     );
 
+
     log(
-      "========== GPU TEST =========="
+      "========== GPU =========="
     );
 
 
-    if (
-      !navigator.gpu
-    ) {
+    if (!navigator.gpu) {
 
       throw new Error(
         "navigator.gpu 不存在"
       );
+
     }
 
 
-    log(
-      "navigator.gpu ✓",
-      "ok"
-    );
-
-
     const adapter =
-      await navigator.gpu.requestAdapter();
+      await navigator.gpu
+        .requestAdapter();
 
 
     if (!adapter) {
@@ -605,6 +618,7 @@ gpuBtn.onclick = async () => {
       throw new Error(
         "requestAdapter() = null"
       );
+
     }
 
 
@@ -614,72 +628,50 @@ gpuBtn.onclick = async () => {
     );
 
 
-    const limits =
-      adapter.limits;
-
-
     log(
       "maxBufferSize = " +
-      formatBytes(
-        limits.maxBufferSize
+      bytes(
+        adapter.limits.maxBufferSize
       )
     );
 
 
     log(
       "maxStorageBufferBindingSize = " +
-      formatBytes(
-        limits.maxStorageBufferBindingSize
+      bytes(
+        adapter.limits
+          .maxStorageBufferBindingSize
       )
     );
 
 
-    const features =
+    log(
+      "features = " +
       Array.from(
         adapter.features || []
-      );
-
-
-    log(
-      "Features:\n" +
-      (
-        features.length
-          ? features.join(", ")
-          : "(none)"
-      )
+      ).join(", ")
     );
 
 
-    /*
-     * 故意不使用：
-     *
-     * adapter.requestAdapterInfo()
-     *
-     * 避免 Safari / WebKit 相容性問題。
-     */
+    clearMarker();
 
 
     setStatus(
-      "✓ WebGPU 基本診斷成功。\n\n" +
-      "可以繼續測試 ② MediaPipe / WASM。"
+      "✓ WebGPU 診斷成功"
     );
 
 
-    log(
-      "GPU TEST PASS ✓",
-      "ok"
-    );
+  } catch (e) {
 
-
-  } catch (error) {
+    clearMarker();
 
     setStatus(
-      "WebGPU 診斷失敗"
+      "WebGPU error"
     );
 
     log(
-      errorMessage(error),
-      "error"
+      errText(e),
+      "err"
     );
 
   } finally {
@@ -692,47 +684,49 @@ gpuBtn.onclick = async () => {
 
 
 /* =========================================================
-   MEDIAPIPE / WASM TEST
+   MEDIAPIPE
 ========================================================= */
 
-mpBtn.onclick = async () => {
+mpBtn.onclick =
+async () => {
 
   mpBtn.disabled = true;
 
   try {
 
-    setStatus(
-      "正在測試 MediaPipe / WASM..."
-    );
-
-
     log(
-      "========== MEDIAPIPE TEST =========="
+      "========== MEDIAPIPE =========="
     );
 
 
-    setMarker(
-      "STEP 1 · importing MediaPipe"
+    marker(
+      "MP · import"
+    );
+
+
+    setStatus(
+      "載入 MediaPipe..."
     );
 
 
     await loadMediaPipe();
 
 
-    setMarker(
-      "STEP 2 · creating GenAI Fileset"
+    marker(
+      "MP · FilesetResolver"
     );
 
 
     log(
-      "建立 FilesetResolver..."
+      "建立 GenAI Fileset..."
     );
 
 
     genai =
-      await FilesetResolver.forGenAiTasks(
-        WASM_URL
-      );
+      await FilesetResolver
+        .forGenAiTasks(
+          WASM_URL
+        );
 
 
     clearMarker();
@@ -745,30 +739,21 @@ mpBtn.onclick = async () => {
 
 
     setStatus(
-      "✓ MediaPipe / WASM 初始化成功。\n\n" +
-      "這表示 WASM 本身至少可以啟動。"
+      "✓ MediaPipe / WASM 測試成功"
     );
 
 
-    log(
-      "MEDIAPIPE TEST PASS ✓",
-      "ok"
-    );
-
-
-  } catch (error) {
+  } catch (e) {
 
     clearMarker();
 
-
     setStatus(
-      "MediaPipe / WASM JS error"
+      "MediaPipe error"
     );
 
-
     log(
-      errorMessage(error),
-      "error"
+      errText(e),
+      "err"
     );
 
   } finally {
@@ -781,121 +766,102 @@ mpBtn.onclick = async () => {
 
 
 /* =========================================================
-   REMOTE QWEN TEST
+   A — MODEL PATH
 ========================================================= */
 
-remoteBtn.onclick = async () => {
+pathBtn.onclick =
+async () => {
 
-  remoteBtn.disabled = true;
+  pathBtn.disabled = true;
 
   gpuBtn.disabled = true;
   mpBtn.disabled = true;
-  localBtn.disabled = true;
+  bufferBtn.disabled = true;
 
 
   try {
 
     log(
-      "========== REMOTE QWEN TEST =========="
+      "========== A · MODEL PATH =========="
     );
 
 
     setStatus(
-      "Remote Qwen 測試\n\n" +
-      "這次完全不使用 OPFS。\n\n" +
-      "直接讓 MediaPipe 從 Hugging Face 載入 Qwen。"
+      "A 測試\n\n" +
+      "createFromModelPath()\n\n" +
+      "如果 Safari 在這裡整頁重載，" +
+      "Marker 會指出這個階段。"
     );
 
 
     /* ---------------------------------------------
-       STEP A
+       A1
     --------------------------------------------- */
 
-    setMarker(
-      "REMOTE 1 · loading MediaPipe"
-    );
-
-
-    log(
-      "REMOTE 1：load MediaPipe"
+    marker(
+      "A1 · load MediaPipe"
     );
 
 
     await loadMediaPipe();
 
 
-    log(
-      "REMOTE 1 PASS",
-      "ok"
+    /* ---------------------------------------------
+       A2
+    --------------------------------------------- */
+
+    marker(
+      "A2 · FilesetResolver"
     );
+
+
+    if (!genai) {
+
+      genai =
+        await FilesetResolver
+          .forGenAiTasks(
+            WASM_URL
+          );
+
+    }
 
 
     /* ---------------------------------------------
-       STEP B
+       A3
     --------------------------------------------- */
 
-    setMarker(
-      "REMOTE 2 · creating GenAI Fileset"
+    marker(
+      "A3 · createFromModelPath"
     );
 
 
     log(
-      "REMOTE 2：create GenAI Fileset"
-    );
-
-
-    genai =
-      await FilesetResolver.forGenAiTasks(
-        WASM_URL
-      );
-
-
-    log(
-      "REMOTE 2 PASS",
-      "ok"
-    );
-
-
-    /* ---------------------------------------------
-       STEP C
-    --------------------------------------------- */
-
-    setMarker(
-      "REMOTE 3 · createFromModelPath"
-    );
-
-
-    log(
-      "REMOTE 3：即將進入 LlmInference.createFromModelPath()",
+      "⚠️ 即將執行 createFromModelPath()",
       "warn"
     );
 
 
-    setStatus(
-      "⚠️ Remote Qwen GPU 初始化中\n\n" +
-      "如果 Safari 現在整頁重新載入，" +
-      "代表 crash 發生在 MediaPipe / LiteRT / GPU 路徑。\n\n" +
-      "請不要重複按按鈕。"
+    log(
+      "Model URL："
+    );
+
+
+    log(
+      QWEN_URL
     );
 
 
     /*
-     * 官方 README 使用的路徑：
-     *
-     * LlmInference.createFromModelPath(
-     *   genai,
-     *   MODEL_URL
-     * )
-     *
-     * 這次不碰 OPFS。
+     * 官方 Web LLM README 使用這條 API。
      */
 
 
     llm =
-      await LlmInference.createFromModelPath(
-        genai,
-        QWEN_URL
-      );
+      await LlmInference
+        .createFromModelPath(
+          genai,
+          QWEN_URL
+        );
 
 
     /* ---------------------------------------------
@@ -906,46 +872,40 @@ remoteBtn.onclick = async () => {
 
 
     log(
-      "REMOTE 4：Qwen LLM 建立成功 ✓",
+      "A SUCCESS ✓",
       "ok"
     );
 
 
     setStatus(
-      "🎉 Remote Qwen GPU 初始化成功！\n\n" +
-      "這是非常重要的結果：\n\n" +
-      "✓ MediaPipe\n" +
-      "✓ WASM\n" +
-      "✓ LiteRT\n" +
-      "✓ WebGPU\n" +
-      "✓ Qwen 0.5B\n\n" +
-      "都已經可以完成初始化。"
+      "🎉 A：createFromModelPath 成功！\n\n" +
+      "Qwen 0.5B 已完成 LLM 初始化。"
     );
 
 
-  } catch (error) {
+  } catch (e) {
 
     clearMarker();
 
 
     setStatus(
-      "Remote Qwen 發生 JavaScript error"
+      "A 發生 JavaScript error"
     );
 
 
     log(
-      errorMessage(error),
-      "error"
+      errText(e),
+      "err"
     );
 
 
   } finally {
 
-    remoteBtn.disabled = false;
+    pathBtn.disabled = false;
 
     gpuBtn.disabled = false;
     mpBtn.disabled = false;
-    localBtn.disabled = false;
+    bufferBtn.disabled = false;
 
   }
 
@@ -953,157 +913,145 @@ remoteBtn.onclick = async () => {
 
 
 /* =========================================================
-   LOCAL OPFS TEST
+   B — FETCH + MODEL BUFFER
 ========================================================= */
 
-localBtn.onclick = async () => {
+bufferBtn.onclick =
+async () => {
 
-  localBtn.disabled = true;
+  bufferBtn.disabled = true;
 
   gpuBtn.disabled = true;
   mpBtn.disabled = true;
-  remoteBtn.disabled = true;
+  pathBtn.disabled = true;
 
 
   try {
 
     log(
-      "========== LOCAL OPFS TEST =========="
+      "========== B · MODEL BUFFER =========="
     );
 
 
     setStatus(
-      "Local OPFS Qwen 測試\n\n" +
-      "這次使用你之前下載好的 Qwen 模型。"
+      "B 測試\n\n" +
+      "fetch Qwen → ReadableStream → " +
+      "createFromOptions()\n\n" +
+      "這次不使用 createFromModelPath。"
     );
 
 
     /* ---------------------------------------------
-       STEP A
+       B1
     --------------------------------------------- */
 
-    setMarker(
-      "LOCAL 1 · loading MediaPipe"
-    );
-
-
-    log(
-      "LOCAL 1：load MediaPipe"
+    marker(
+      "B1 · load MediaPipe"
     );
 
 
     await loadMediaPipe();
 
 
-    log(
-      "LOCAL 1 PASS",
-      "ok"
-    );
-
-
     /* ---------------------------------------------
-       STEP B
+       B2
     --------------------------------------------- */
 
-    setMarker(
-      "LOCAL 2 · creating GenAI Fileset"
+    marker(
+      "B2 · FilesetResolver"
     );
 
 
-    log(
-      "LOCAL 2：create GenAI Fileset"
-    );
+    if (!genai) {
 
+      genai =
+        await FilesetResolver
+          .forGenAiTasks(
+            WASM_URL
+          );
 
-    genai =
-      await FilesetResolver.forGenAiTasks(
-        WASM_URL
-      );
-
-
-    log(
-      "LOCAL 2 PASS",
-      "ok"
-    );
-
-
-    /* ---------------------------------------------
-       STEP C
-    --------------------------------------------- */
-
-    setMarker(
-      "LOCAL 3 · opening OPFS"
-    );
-
-
-    log(
-      "LOCAL 3：開啟 OPFS"
-    );
-
-
-    if (
-      !navigator.storage ||
-      !navigator.storage.getDirectory
-    ) {
-
-      throw new Error(
-        "此 Safari 不支援 OPFS"
-      );
     }
 
 
-    const root =
-      await navigator.storage.getDirectory();
+    log(
+      "GenAI Fileset ✓",
+      "ok"
+    );
 
 
-    const handle =
-      await root.getFileHandle(
-        OPFS_NAME,
+    /* ---------------------------------------------
+       B3
+    --------------------------------------------- */
+
+    marker(
+      "B3 · fetch Qwen"
+    );
+
+
+    setStatus(
+      "B3 / 4\n\n" +
+      "正在從 Hugging Face 串流 Qwen..."
+    );
+
+
+    log(
+      "開始 fetch Qwen..."
+    );
+
+
+    const response =
+      await fetch(
+        QWEN_URL,
         {
-          create: false
+          cache: "no-store"
         }
       );
 
 
-    const file =
-      await handle.getFile();
-
-
-    log(
-      "OPFS Qwen size = " +
-      formatBytes(file.size),
-      "ok"
-    );
-
-
-    if (
-      file.size <
-      100 * 1024 * 1024
-    ) {
+    if (!response.ok) {
 
       throw new Error(
-        "Qwen OPFS 檔案大小異常"
+        `HTTP ${response.status} ${response.statusText}`
       );
+
     }
 
 
-    /* ---------------------------------------------
-       STEP D
-    --------------------------------------------- */
+    if (!response.body) {
 
-    setMarker(
-      "LOCAL 4 · creating stream reader"
-    );
+      throw new Error(
+        "response.body 不存在"
+      );
+
+    }
+
+
+    const total =
+      Number(
+        response.headers
+          .get("content-length") || 0
+      );
 
 
     log(
-      "LOCAL 4：建立 ReadableStream reader"
+      total
+        ? "Content-Length = " +
+          bytes(total)
+        : "Content-Length 未提供"
+    );
+
+
+    /* ---------------------------------------------
+       B4
+    --------------------------------------------- */
+
+    marker(
+      "B4 · createFromOptions"
     );
 
 
     const reader =
-      file
-        .stream()
+      response.body
         .getReader();
 
 
@@ -1113,47 +1061,46 @@ localBtn.onclick = async () => {
     );
 
 
-    /* ---------------------------------------------
-       STEP E
-    --------------------------------------------- */
-
-    setMarker(
-      "LOCAL 5 · createFromOptions GPU"
+    setStatus(
+      "B4 / 4\n\n" +
+      "⚠️ 即將進入 createFromOptions()\n\n" +
+      "如果 Safari 整頁重載，" +
+      "表示問題不是 OPFS。"
     );
 
 
     log(
-      "LOCAL 5：即將進入 createFromOptions()",
+      "⚠️ 即將執行 createFromOptions()",
       "warn"
     );
 
 
-    setStatus(
-      "⚠️ Local Qwen GPU 初始化中\n\n" +
-      "這是本次 Local 測試最後一個階段。\n\n" +
-      "如果 Safari 整頁重新載入，" +
-      "代表 crash 發生在這裡附近。"
-    );
-
-
     llm =
-      await LlmInference.createFromOptions(
-        genai,
-        {
-          baseOptions: {
-            modelAssetBuffer: reader,
-            delegate: "GPU"
-          },
+      await LlmInference
+        .createFromOptions(
+          genai,
+          {
+            baseOptions: {
+              modelAssetBuffer:
+                reader,
 
-          maxTokens: 64,
+              delegate:
+                "GPU"
+            },
 
-          topK: 1,
+            maxTokens:
+              64,
 
-          temperature: 0,
+            topK:
+              1,
 
-          randomSeed: 1
-        }
-      );
+            temperature:
+              0,
+
+            randomSeed:
+              1
+          }
+        );
 
 
     /* ---------------------------------------------
@@ -1164,40 +1111,40 @@ localBtn.onclick = async () => {
 
 
     log(
-      "LOCAL Qwen initialization SUCCESS ✓",
+      "B SUCCESS ✓",
       "ok"
     );
 
 
     setStatus(
-      "🎉 Local OPFS Qwen GPU 初始化成功！\n\n" +
-      "代表本地模型串流也可以正常交給 MediaPipe。"
+      "🎉 B：modelAssetBuffer 成功！\n\n" +
+      "Qwen 0.5B 已完成 GPU 初始化。"
     );
 
 
-  } catch (error) {
+  } catch (e) {
 
     clearMarker();
 
 
     setStatus(
-      "Local Qwen JavaScript error"
+      "B 發生 JavaScript error"
     );
 
 
     log(
-      errorMessage(error),
-      "error"
+      errText(e),
+      "err"
     );
 
 
   } finally {
 
-    localBtn.disabled = false;
+    bufferBtn.disabled = false;
 
     gpuBtn.disabled = false;
     mpBtn.disabled = false;
-    remoteBtn.disabled = false;
+    pathBtn.disabled = false;
 
   }
 
@@ -1208,7 +1155,8 @@ localBtn.onclick = async () => {
    RESET
 ========================================================= */
 
-resetBtn.onclick = () => {
+resetBtn.onclick =
+() => {
 
   clearMarker();
 
@@ -1217,60 +1165,71 @@ resetBtn.onclick = () => {
   llm = null;
   genai = null;
 
+
   setStatus(
-    "V8 診斷 Marker 已清除。\n\n" +
-    "建議先按 ①，再按 ②，最後按 ③。"
+    "Marker 已清除。\n\n" +
+    "建議先跑：\n" +
+    "① WebGPU\n" +
+    "② MediaPipe\n" +
+    "③ A\n\n" +
+    "如果 A 重載，再重新開頁後跑 ④ B。"
   );
 
+
   log(
-    "Marker cleared."
+    "V9 reset",
+    "info"
   );
 
 };
 
 
 /* =========================================================
-   FORMAT BYTES
+   FORMAT
 ========================================================= */
 
-function formatBytes(bytes) {
+function bytes(n) {
 
   if (
-    !Number.isFinite(bytes)
+    !Number.isFinite(n)
   ) {
 
     return "unknown";
+
   }
 
 
   if (
-    bytes >=
+    n >=
     1024 * 1024 * 1024
   ) {
 
     return (
-      bytes /
+      n /
       1024 /
       1024 /
       1024
-    ).toFixed(2) + " GB";
+    ).toFixed(2) +
+    " GB";
+
   }
 
 
   return (
-    bytes /
+    n /
     1024 /
     1024
-  ).toFixed(1) + " MB";
+  ).toFixed(1) +
+  " MB";
 
 }
 
 
 /* =========================================================
-   STARTUP
+   START
 ========================================================= */
 
-showPreviousMarker();
+previousMarker();
 
 
 if (
@@ -1280,28 +1239,28 @@ if (
 ) {
 
   setStatus(
-    "V8 已準備。\n\n" +
-    "建議測試順序：\n\n" +
+    "V9 已準備。\n\n" +
+    "建議順序：\n\n" +
     "① WebGPU\n" +
     "② MediaPipe / WASM\n" +
-    "③ 遠端 Qwen GPU 初始化\n" +
-    "④ 本地 OPFS Qwen GPU 初始化"
+    "③ A：createFromModelPath\n\n" +
+    "如果 ③ 重載，重新進入頁面後再測 ④。"
   );
 
 }
 
 
 log(
-  "V8 ready.",
+  "V9 ready.",
   "info"
 );
 
 log(
-  `MediaPipe version: ${MP_VERSION}`
+  `MediaPipe: ${MP_VERSION}`
 );
 
 log(
-  "Qwen URL: " + QWEN_URL
+  "Qwen: 0.5B q8"
 );
 
 </script>
