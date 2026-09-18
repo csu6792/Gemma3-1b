@@ -1,2144 +1,1362 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <title>LiteRT.js WebGPU AI Chat</title>
+<title>iPhone Local AI Chat</title>
 
-  <style>
-    :root {
-      --bg: #0d1117;
-      --card: #161b22;
-      --border: #30363d;
-      --text: #c9d1d9;
-      --muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-hover: #1f6feb;
-      --ok: #3fb950;
-      --warn: #d29922;
-      --err: #f85149;
-      --user: #1f242c;
-      --ai: #161b22;
-    }
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-    }
-
-    body {
-      font-family:
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #0b0f14;
+    color: #f4f4f5;
+    font-family:
         -apple-system,
         BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
+        "SF Pro Display",
+        "PingFang TC",
         "Noto Sans TC",
         sans-serif;
+}
 
-      background: var(--bg);
-      color: var(--text);
+body {
+    overflow: hidden;
+}
 
-      height: 100dvh;
+#app {
+    height: 100dvh;
+    height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
 
-      display: flex;
-      flex-direction: column;
+/* =========================
+   Header
+========================= */
 
-      overflow: hidden;
-    }
+header {
+    flex: 0 0 auto;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid #252a32;
+    background: rgba(11, 15, 20, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
 
-    /* =========================
-       Header
-    ========================= */
+.title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
 
+.title h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.device-badge {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: #17202b;
+    color: #9ecbff;
+    white-space: nowrap;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+select,
+button,
+textarea {
+    font: inherit;
+}
+
+select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #343b45;
+    border-radius: 11px;
+    background: #151a21;
+    color: white;
+    padding: 0 12px;
+}
+
+button {
+    border: 0;
+    border-radius: 11px;
+    min-height: 42px;
+    padding: 0 15px;
+    background: #2d7ff9;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* =========================
+   Status
+========================= */
+
+.status {
+    margin-top: 9px;
+    min-height: 20px;
+    font-size: 12px;
+    color: #9ca3af;
+    line-height: 1.45;
+}
+
+.progress-wrap {
+    display: none;
+    margin-top: 8px;
+}
+
+.progress-bg {
+    width: 100%;
+    height: 5px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: #202630;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #2d7ff9;
+    transition: width 0.15s linear;
+}
+
+.progress-text {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #7d8794;
+}
+
+/* =========================
+   Chat
+========================= */
+
+#messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 18px 14px 20px;
+}
+
+.message {
+    max-width: 88%;
+    margin-bottom: 14px;
+    padding: 11px 13px;
+    border-radius: 15px;
+    line-height: 1.6;
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.message.user {
+    margin-left: auto;
+    background: #1f5fbf;
+    border-bottom-right-radius: 5px;
+}
+
+.message.ai {
+    margin-right: auto;
+    background: #171c23;
+    border: 1px solid #272e38;
+    border-bottom-left-radius: 5px;
+}
+
+.message.system {
+    max-width: 100%;
+    margin: 0 auto 12px;
+    background: transparent;
+    color: #8993a0;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* =========================
+   Composer
+========================= */
+
+.composer {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    border-top: 1px solid #252a32;
+    background: rgba(11, 15, 20, 0.97);
+}
+
+.composer-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+textarea {
+    flex: 1;
+    min-width: 0;
+    max-height: 130px;
+    min-height: 44px;
+    resize: none;
+    border: 1px solid #343b45;
+    border-radius: 13px;
+    padding: 11px 12px;
+    background: #151a21;
+    color: white;
+    outline: none;
+    line-height: 1.4;
+}
+
+textarea:focus {
+    border-color: #2d7ff9;
+}
+
+.send {
+    min-width: 64px;
+}
+
+/* =========================
+   iPhone warning
+========================= */
+
+.iphone-tip {
+    display: none;
+    margin-top: 7px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: #1c2631;
+    color: #b8c7d9;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+body.ios .iphone-tip {
+    display: block;
+}
+
+/* =========================
+   Small screens
+========================= */
+
+@media (max-width: 500px) {
     header {
-      flex-shrink: 0;
-
-      padding: 12px 16px;
-
-      background: var(--card);
-
-      border-bottom: 1px solid var(--border);
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      gap: 12px;
+        padding-left: 12px;
+        padding-right: 12px;
     }
 
-    .title-group {
-      min-width: 0;
-    }
-
-    .title-group h1 {
-      color: #fff;
-
-      font-size: 1rem;
-
-      font-weight: 600;
-    }
-
-    .title-group p {
-      color: var(--muted);
-
-      font-size: 0.72rem;
-
-      margin-top: 3px;
-    }
-
-    .badge {
-      flex-shrink: 0;
-
-      padding: 4px 9px;
-
-      border-radius: 20px;
-
-      background: #21262d;
-
-      border: 1px solid var(--border);
-
-      color: var(--muted);
-
-      font-size: 0.72rem;
-    }
-
-    .badge.ok {
-      color: var(--ok);
-      border-color: var(--ok);
-    }
-
-    .badge.warn {
-      color: var(--warn);
-      border-color: var(--warn);
-    }
-
-    .badge.err {
-      color: var(--err);
-      border-color: var(--err);
-    }
-
-    /* =========================
-       Chat
-    ========================= */
-
-    #chat-container {
-      flex: 1;
-
-      min-height: 0;
-
-      overflow-y: auto;
-
-      padding: 16px;
-
-      display: flex;
-      flex-direction: column;
-
-      gap: 12px;
-
-      overscroll-behavior: contain;
-
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .msg {
-      max-width: 85%;
-
-      display: flex;
-      flex-direction: column;
-    }
-
-    .msg.user {
-      align-self: flex-end;
-    }
-
-    .msg.ai {
-      align-self: flex-start;
-    }
-
-    .bubble {
-      padding: 10px 14px;
-
-      border-radius: 12px;
-
-      border: 1px solid var(--border);
-
-      font-size: 0.95rem;
-
-      line-height: 1.55;
-
-      white-space: pre-wrap;
-
-      word-break: break-word;
-    }
-
-    .msg.user .bubble {
-      background: var(--user);
-
-      color: #fff;
-
-      border-color: #38444d;
-    }
-
-    .msg.ai .bubble {
-      background: var(--ai);
-    }
-
-    /* =========================
-       Setup panel
-    ========================= */
-
-    .control-panel {
-      width: 100%;
-      max-width: 560px;
-
-      margin: 10px auto;
-
-      padding: 16px;
-
-      background: var(--card);
-
-      border: 1px solid var(--border);
-
-      border-radius: 12px;
-    }
-
-    .control-panel h2 {
-      color: #fff;
-
-      font-size: 0.95rem;
-
-      margin-bottom: 8px;
-    }
-
-    .control-panel > p {
-      color: var(--muted);
-
-      font-size: 0.8rem;
-
-      line-height: 1.5;
-
-      margin-bottom: 14px;
-    }
-
-    .field-label {
-      display: block;
-
-      color: var(--muted);
-
-      font-size: 0.8rem;
-
-      font-weight: 600;
-
-      margin-bottom: 5px;
-    }
-
-    select,
-    input[type="password"],
-    button {
-      width: 100%;
-
-      border-radius: 8px;
-
-      border: 1px solid var(--border);
-
-      background: #21262d;
-
-      color: #fff;
-
-      font-family: inherit;
-
-      font-size: 0.9rem;
-
-      outline: none;
-    }
-
-    select,
-    input[type="password"] {
-      padding: 10px 12px;
-
-      margin-bottom: 12px;
-    }
-
-    select {
-      cursor: pointer;
-    }
-
-    select:focus,
-    input[type="password"]:focus,
-    textarea:focus {
-      border-color: var(--accent);
-    }
-
-    button {
-      padding: 10px 12px;
-    }
-
-    #load-btn {
-      background: var(--accent);
-
-      border: none;
-
-      color: #fff;
-
-      font-weight: 600;
-
-      cursor: pointer;
-
-      transition: 0.2s;
-    }
-
-    #load-btn:hover:not(:disabled) {
-      background: var(--accent-hover);
-    }
-
-    #load-btn:disabled {
-      opacity: 0.5;
-
-      cursor: not-allowed;
-    }
-
-    #cancel-btn {
-      display: none;
-
-      margin-top: 8px;
-
-      background: transparent;
-
-      color: var(--muted);
-
-      cursor: pointer;
-    }
-
-    #cancel-btn:hover {
-      color: #fff;
-    }
-
-    /* =========================
-       Progress
-    ========================= */
-
-    .progress-bg {
-      width: 100%;
-
-      height: 6px;
-
-      margin-top: 12px;
-
-      overflow: hidden;
-
-      background: #21262d;
-
-      border-radius: 4px;
-    }
-
-    #progress-fill {
-      width: 0%;
-
-      height: 100%;
-
-      background: var(--accent);
-
-      transition: width 0.1s linear;
-    }
-
-    #status-text {
-      min-height: 18px;
-
-      margin-top: 8px;
-
-      color: var(--muted);
-
-      font-size: 0.75rem;
-
-      text-align: center;
-    }
-
-    /* =========================
-       Info
-    ========================= */
-
-    .info-box {
-      margin-top: 12px;
-
-      padding: 10px 12px;
-
-      background: #0d1117;
-
-      border: 1px solid var(--border);
-
-      border-radius: 8px;
-
-      color: var(--muted);
-
-      font-size: 0.74rem;
-
-      line-height: 1.5;
-    }
-
-    .info-box strong {
-      color: #fff;
-    }
-
-    /* =========================
-       Cache
-    ========================= */
-
-    .cache-row {
-      margin-top: 10px;
-
-      display: flex;
-
-      align-items: center;
-
-      justify-content: space-between;
-
-      gap: 8px;
-    }
-
-    #cache-status {
-      min-width: 0;
-
-      color: var(--muted);
-
-      font-size: 0.7rem;
-    }
-
-    #clear-cache-btn {
-      width: auto;
-
-      padding: 6px 9px;
-
-      flex-shrink: 0;
-
-      background: transparent;
-
-      color: var(--muted);
-
-      font-size: 0.7rem;
-
-      cursor: pointer;
-    }
-
-    #clear-cache-btn:hover {
-      color: var(--err);
-
-      border-color: var(--err);
-    }
-
-    /* =========================
-       Input
-    ========================= */
-
-    .input-area {
-      flex-shrink: 0;
-
-      padding: 12px 16px;
-
-      background: var(--card);
-
-      border-top: 1px solid var(--border);
-    }
-
-    .input-row {
-      width: 100%;
-
-      max-width: 800px;
-
-      margin: 0 auto;
-
-      display: flex;
-
-      gap: 8px;
-    }
-
-    textarea {
-      flex: 1;
-
-      width: 100%;
-
-      height: 44px;
-
-      resize: none;
-
-      padding: 10px 12px;
-
-      border-radius: 8px;
-
-      border: 1px solid var(--border);
-
-      background: #0d1117;
-
-      color: #fff;
-
-      font-family: inherit;
-
-      font-size: 16px;
-
-      line-height: 1.4;
-
-      outline: none;
-    }
-
-    textarea:disabled {
-      opacity: 0.5;
-    }
-
-    #send-btn {
-      flex: 0 0 44px;
-
-      width: 44px;
-
-      height: 44px;
-
-      padding: 0;
-
-      border: none;
-
-      border-radius: 8px;
-
-      background: var(--accent);
-
-      color: #fff;
-
-      font-size: 1.1rem;
-
-      cursor: pointer;
-    }
-
-    #send-btn:hover:not(:disabled) {
-      background: var(--accent-hover);
-    }
-
-    #send-btn:disabled {
-      opacity: 0.4;
-
-      cursor: not-allowed;
-    }
-
-    /* =========================
-       Mobile
-    ========================= */
-
-    @media (max-width: 600px) {
-      header {
-        padding: 10px 12px;
-      }
-
-      #chat-container {
-        padding: 10px;
-      }
-
-      .control-panel {
-        padding: 14px;
-      }
-
-      .msg {
+    .message {
         max-width: 92%;
-      }
-
-      .input-area {
-        padding: 8px 10px;
-      }
     }
-  </style>
+}
+</style>
 </head>
 
 <body>
 
-  <!-- =========================
-       Header
-  ========================== -->
+<div id="app">
 
-  <header>
+    <header>
 
-    <div class="title-group">
-
-      <h1>
-        WebGPU 在端 AI 對話
-      </h1>
-
-      <p>
-        LiteRT.js / MediaPipe Tasks GenAI
-      </p>
-
-    </div>
-
-    <div
-      id="gpu-status"
-      class="badge"
-    >
-      檢查 WebGPU 中...
-    </div>
-
-  </header>
-
-
-  <!-- =========================
-       Chat
-  ========================== -->
-
-  <main id="chat-container">
-
-    <!-- Setup -->
-
-    <div
-      id="setup-panel"
-      class="control-panel"
-    >
-
-      <h2>
-        選擇 LiteRT AI 模型
-      </h2>
-
-      <p>
-        模型會直接下載到瀏覽器，並使用你的裝置 GPU
-        在本機執行，不需要把對話內容送到遠端 AI API。
-      </p>
-
-
-      <!-- Model -->
-
-      <label
-        class="field-label"
-        for="model-select"
-      >
-        1. 選擇模型
-      </label>
-
-      <select id="model-select">
-
-        <optgroup label="Qwen 系列">
-
-          <option
-            value="https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task"
-            data-name="Qwen 2.5 0.5B Instruct"
-            data-size="約 547 MB"
-          >
-            Qwen 2.5 0.5B Instruct · Q8 · 約 547 MB
-          </option>
-
-        </optgroup>
-
-
-        <optgroup label="Gemma 系列">
-
-          <option
-            value="https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4-web.task"
-            data-name="Gemma 3 1B IT"
-            data-size="約 700 MB"
-          >
-            Gemma 3 1B IT · INT4 Web · 約 700 MB
-          </option>
-
-        </optgroup>
-
-      </select>
-
-
-      <!-- HF Token -->
-
-      <label
-        class="field-label"
-        for="hf-token"
-      >
-        2. Hugging Face Access Token
-      </label>
-
-      <input
-        id="hf-token"
-        type="password"
-        placeholder="hf_xxxxxxxxxxxxxxxxx"
-        autocomplete="off"
-        spellcheck="false"
-      />
-
-
-      <!-- Load -->
-
-      <button
-        id="load-btn"
-        type="button"
-      >
-        下載並初始化模型
-      </button>
-
-
-      <!-- Cancel -->
-
-      <button
-        id="cancel-btn"
-        type="button"
-      >
-        取消下載
-      </button>
-
-
-      <!-- Progress -->
-
-      <div class="progress-bg">
-
-        <div
-          id="progress-fill"
-        ></div>
-
-      </div>
-
-
-      <div id="status-text">
-        點擊按鈕開始下載
-      </div>
-
-
-      <!-- Cache -->
-
-      <div class="cache-row">
-
-        <div id="cache-status">
-          檢查模型快取中...
+        <div class="title">
+            <h1>📱 Local AI Chat</h1>
+            <div id="deviceBadge" class="device-badge">
+                Browser
+            </div>
         </div>
 
-        <button
-          id="clear-cache-btn"
-          type="button"
-        >
-          清除快取
-        </button>
+        <div class="controls">
 
-      </div>
+            <select id="modelSelect">
+                <option value="qwen05">
+                    Qwen 2.5 0.5B — iPhone 推薦
+                </option>
 
+                <option value="gemma1b">
+                    Gemma 3 1B — 較大
+                </option>
+            </select>
 
-      <!-- Info -->
+            <button id="loadBtn">
+                載入
+            </button>
 
-      <div class="info-box">
+        </div>
 
-        <strong>注意：</strong>
+        <div id="status" class="status">
+            尚未載入模型
+        </div>
 
-        Gemma 3 是 Hugging Face gated model。
-        使用 Gemma 時，需要先登入 Hugging Face，
-        接受 Gemma license，並使用具有讀取權限的 Token。
+        <div id="progressWrap" class="progress-wrap">
+            <div class="progress-bg">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
 
-        <br><br>
+            <div id="progressText" class="progress-text">
+                準備下載...
+            </div>
+        </div>
 
-        如果只是測試 WebGPU，
-        建議先使用 Qwen 2.5 0.5B。
+        <div class="iphone-tip">
+            iPhone 模式：優先使用較小模型、避免一次建立多份模型副本，
+            並限制輸出長度以降低 Safari 記憶體壓力。
+        </div>
 
-      </div>
+    </header>
+
+    <main id="messages">
+
+        <div class="message system">
+            選擇模型後按「載入」。模型會保存在瀏覽器 Cache，
+            下次開啟可直接使用。
+        </div>
+
+    </main>
+
+    <div class="composer">
+
+        <div class="composer-row">
+
+            <textarea
+                id="input"
+                rows="1"
+                placeholder="輸入訊息..."
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="sentences"
+                spellcheck="false"
+            ></textarea>
+
+            <button
+                id="sendBtn"
+                class="send"
+                disabled
+            >
+                發送
+            </button>
+
+        </div>
 
     </div>
 
-  </main>
+</div>
+
+<script type="module">
+
+/* ============================================================
+   MediaPipe Tasks GenAI
+============================================================ */
+
+import {
+    FilesetResolver,
+    LlmInference
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
 
 
-  <!-- =========================
-       Chat Input
-  ========================== -->
+/* ============================================================
+   Model definitions
+============================================================ */
 
-  <div class="input-area">
+const MODELS = {
 
-    <div class="input-row">
+    qwen05: {
+        name: "Qwen 2.5 0.5B",
 
-      <textarea
-        id="user-input"
-        placeholder="請先載入模型..."
-        disabled
-      ></textarea>
+        url:
+            "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/" +
+            "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
 
-      <button
-        id="send-btn"
-        type="button"
-        disabled
-        aria-label="送出"
-      >
-        ➤
-      </button>
+        approxMB: 547,
 
-    </div>
+        iphoneRecommended: true,
 
-  </div>
+        maxTokensDesktop: 384,
+        maxTokensIOS: 256
+    },
 
+    gemma1b: {
+        name: "Gemma 3 1B",
 
-  <!-- =========================
-       JavaScript
-  ========================== -->
+        url:
+            "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/" +
+            "gemma3-1b-it-int4-web.task",
 
-  <script type="module">
+        approxMB: 700,
 
-    /*
-     * ============================================================
-     * LiteRT / MediaPipe Tasks GenAI
-     * ============================================================
-     *
-     * Package:
-     *
-     * @mediapipe/tasks-genai@0.10.29
-     *
-     * ============================================================
-     */
+        iphoneRecommended: false,
 
-    import {
-      FilesetResolver,
-      LlmInference
-    } from
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
-
-
-    /* ============================================================
-       DOM
-    ============================================================ */
-
-    const gpuStatus =
-      document.getElementById(
-        "gpu-status"
-      );
-
-    const setupPanel =
-      document.getElementById(
-        "setup-panel"
-      );
-
-    const modelSelect =
-      document.getElementById(
-        "model-select"
-      );
-
-    const hfTokenInput =
-      document.getElementById(
-        "hf-token"
-      );
-
-    const loadBtn =
-      document.getElementById(
-        "load-btn"
-      );
-
-    const cancelBtn =
-      document.getElementById(
-        "cancel-btn"
-      );
-
-    const progressFill =
-      document.getElementById(
-        "progress-fill"
-      );
-
-    const statusText =
-      document.getElementById(
-        "status-text"
-      );
-
-    const cacheStatus =
-      document.getElementById(
-        "cache-status"
-      );
-
-    const clearCacheBtn =
-      document.getElementById(
-        "clear-cache-btn"
-      );
-
-    const chatContainer =
-      document.getElementById(
-        "chat-container"
-      );
-
-    const userInput =
-      document.getElementById(
-        "user-input"
-      );
-
-    const sendBtn =
-      document.getElementById(
-        "send-btn"
-      );
-
-
-    /* ============================================================
-       State
-    ============================================================ */
-
-    let llmInference = null;
-
-    let isBusy = false;
-
-    let downloadController = null;
-
-    let currentBlobUrl = null;
-
-
-    /* ============================================================
-       IndexedDB
-    ============================================================ */
-
-    const DB_NAME =
-      "litert-web-llm-cache";
-
-    const DB_VERSION = 1;
-
-    const STORE_NAME =
-      "models";
-
-
-    function openDatabase() {
-
-      return new Promise(
-        (resolve, reject) => {
-
-          const request =
-            indexedDB.open(
-              DB_NAME,
-              DB_VERSION
-            );
-
-
-          request.onupgradeneeded =
-            () => {
-
-              const db =
-                request.result;
-
-              if (
-                !db.objectStoreNames.contains(
-                  STORE_NAME
-                )
-              ) {
-
-                db.createObjectStore(
-                  STORE_NAME,
-                  {
-                    keyPath: "url"
-                  }
-                );
-
-              }
-
-            };
-
-
-          request.onsuccess =
-            () => {
-
-              resolve(
-                request.result
-              );
-
-            };
-
-
-          request.onerror =
-            () => {
-
-              reject(
-                request.error
-              );
-
-            };
-
-        }
-      );
-
+        maxTokensDesktop: 384,
+        maxTokensIOS: 192
     }
 
-
-    async function getCachedModel(
-      url
-    ) {
-
-      try {
-
-        const db =
-          await openDatabase();
+};
 
 
-        return await new Promise(
-          (resolve, reject) => {
+/* ============================================================
+   DOM
+============================================================ */
 
-            const transaction =
-              db.transaction(
-                STORE_NAME,
-                "readonly"
-              );
+const modelSelect =
+    document.getElementById("modelSelect");
+
+const loadBtn =
+    document.getElementById("loadBtn");
+
+const sendBtn =
+    document.getElementById("sendBtn");
+
+const input =
+    document.getElementById("input");
+
+const messages =
+    document.getElementById("messages");
+
+const statusEl =
+    document.getElementById("status");
+
+const progressWrap =
+    document.getElementById("progressWrap");
+
+const progressBar =
+    document.getElementById("progressBar");
+
+const progressText =
+    document.getElementById("progressText");
+
+const deviceBadge =
+    document.getElementById("deviceBadge");
 
 
-            const store =
-              transaction.objectStore(
-                STORE_NAME
-              );
+/* ============================================================
+   Device detection
+============================================================ */
+
+const isIOS =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (
+        navigator.platform === "MacIntel" &&
+        navigator.maxTouchPoints > 1
+    );
+
+const isSafari =
+    /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+    );
+
+const hasWebGPU =
+    !!navigator.gpu;
+
+if (isIOS) {
+    document.body.classList.add("ios");
+    deviceBadge.textContent = "iPhone / iPad";
+} else if (hasWebGPU) {
+    deviceBadge.textContent = "WebGPU";
+} else {
+    deviceBadge.textContent = "Web";
+}
 
 
-            const request =
-              store.get(url);
+/* ============================================================
+   iPhone default model
+============================================================ */
+
+if (isIOS) {
+    modelSelect.value = "qwen05";
+}
 
 
-            request.onsuccess =
-              () => {
+/* ============================================================
+   LiteRT state
+============================================================ */
 
-                resolve(
-                  request.result ||
-                  null
-                );
+let llm = null;
 
-              };
+let currentModelKey = null;
+
+let currentObjectURL = null;
+
+let isLoading = false;
+
+let isGenerating = false;
 
 
-            request.onerror =
-              () => {
+/* ============================================================
+   Cache
+============================================================ */
 
-                reject(
-                  request.error
-                );
+const CACHE_NAME =
+    "local-ai-model-cache-v2";
 
-              };
 
-          }
+/* ============================================================
+   Messages
+============================================================ */
+
+function addMessage(
+    text,
+    type = "ai"
+) {
+
+    const el =
+        document.createElement("div");
+
+    el.className =
+        `message ${type}`;
+
+    el.textContent = text;
+
+    messages.appendChild(el);
+
+    messages.scrollTop =
+        messages.scrollHeight;
+
+    return el;
+}
+
+
+/* ============================================================
+   Status
+============================================================ */
+
+function setStatus(text) {
+    statusEl.textContent = text;
+}
+
+
+/* ============================================================
+   Progress
+============================================================ */
+
+function showProgress() {
+    progressWrap.style.display = "block";
+}
+
+function hideProgress() {
+    progressWrap.style.display = "none";
+}
+
+function setProgress(
+    percent,
+    text
+) {
+
+    progressBar.style.width =
+        `${Math.max(0, Math.min(100, percent))}%`;
+
+    progressText.textContent =
+        text || `${percent}%`;
+}
+
+
+/* ============================================================
+   WebGPU test
+============================================================ */
+
+async function checkWebGPU() {
+
+    if (!navigator.gpu) {
+        throw new Error(
+            "這個瀏覽器沒有 WebGPU。請更新 iPhone / Safari。"
         );
+    }
 
-      } catch (error) {
+    let adapter = null;
+
+    try {
+        adapter =
+            await navigator.gpu.requestAdapter();
+    } catch (e) {
+        adapter = null;
+    }
+
+    if (!adapter) {
+        throw new Error(
+            "Safari 找不到可用的 WebGPU GPU Adapter。"
+        );
+    }
+
+    return true;
+}
+
+
+/* ============================================================
+   Cache lookup
+============================================================ */
+
+async function getCachedModel(url) {
+
+    if (!("caches" in window)) {
+        return null;
+    }
+
+    try {
+
+        const cache =
+            await caches.open(CACHE_NAME);
+
+        const response =
+            await cache.match(url);
+
+        if (!response) {
+            return null;
+        }
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return response;
+
+    } catch (error) {
 
         console.warn(
-          "IndexedDB read error:",
-          error
+            "Cache read failed:",
+            error
         );
 
         return null;
-
-      }
-
     }
-
-
-    async function saveCachedModel(
-      url,
-      blob
-    ) {
-
-      try {
-
-        const db =
-          await openDatabase();
-
-
-        await new Promise(
-          (resolve, reject) => {
-
-            const transaction =
-              db.transaction(
-                STORE_NAME,
-                "readwrite"
-              );
-
-
-            const store =
-              transaction.objectStore(
-                STORE_NAME
-              );
-
-
-            const request =
-              store.put({
-                url: url,
-                blob: blob,
-                createdAt: Date.now()
-              });
-
-
-            request.onsuccess =
-              () => resolve();
-
-
-            request.onerror =
-              () => reject(
-                request.error
-              );
-
-          }
-        );
-
-      } catch (error) {
-
-        console.warn(
-          "IndexedDB write error:",
-          error
-        );
-
-      }
-
-    }
-
-
-    async function clearModelCache() {
-
-      try {
-
-        const db =
-          await openDatabase();
-
-
-        await new Promise(
-          (resolve, reject) => {
-
-            const transaction =
-              db.transaction(
-                STORE_NAME,
-                "readwrite"
-              );
-
-
-            const store =
-              transaction.objectStore(
-                STORE_NAME
-              );
-
-
-            const request =
-              store.clear();
-
-
-            request.onsuccess =
-              () => resolve();
-
-
-            request.onerror =
-              () => reject(
-                request.error
-              );
-
-          }
-        );
-
-
-        cacheStatus.textContent =
-          "模型快取已清除";
-
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-        cacheStatus.textContent =
-          "清除快取失敗";
-
-      }
-
-    }
-
-
-    /* ============================================================
-       Cache status
-    ============================================================ */
-
-    async function updateCacheStatus() {
-
-      cacheStatus.textContent =
-        "檢查模型快取...";
-
-
-      const url =
-        modelSelect.value;
-
-
-      const cached =
-        await getCachedModel(
-          url
-        );
-
-
-      if (
-        cached &&
-        cached.blob
-      ) {
-
-        const size =
-          (
-            cached.blob.size /
-            1024 /
-            1024
-          ).toFixed(0);
-
-
-        cacheStatus.textContent =
-          `已快取此模型 · ${size} MB`;
-
-      } else {
-
-        cacheStatus.textContent =
-          "此模型尚未下載";
-
-      }
-
-    }
-
-
-    /* ============================================================
-       WebGPU
-    ============================================================ */
-
-    async function checkWebGPU() {
-
-      if (
-        !navigator.gpu
-      ) {
-
-        gpuStatus.textContent =
-          "無 WebGPU";
-
-        gpuStatus.className =
-          "badge err";
-
-
-        statusText.textContent =
-          "此瀏覽器沒有 WebGPU。請使用支援 WebGPU 的新版 Chrome、Edge 或 Safari。";
-
-
-        loadBtn.disabled =
-          true;
-
-
-        return false;
-
-      }
-
-
-      try {
-
-        const adapter =
-          await navigator.gpu.requestAdapter();
-
-
-        if (!adapter) {
-
-          gpuStatus.textContent =
-            "WebGPU 不可用";
-
-          gpuStatus.className =
-            "badge err";
-
-
-          statusText.textContent =
-            "瀏覽器有 WebGPU API，但沒有取得 GPU Adapter。";
-
-
-          loadBtn.disabled =
-            true;
-
-
-          return false;
-
-        }
-
-
-        gpuStatus.textContent =
-          "WebGPU 就緒";
-
-        gpuStatus.className =
-          "badge ok";
-
-
-        return true;
-
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-
-        gpuStatus.textContent =
-          "WebGPU 錯誤";
-
-        gpuStatus.className =
-          "badge err";
-
-
-        loadBtn.disabled =
-          true;
-
-
-        return false;
-
-      }
-
-    }
-
-
-    /* ============================================================
-       UI helpers
-    ============================================================ */
-
-    function setProgress(
-      percent
-    ) {
-
-      const value =
-        Math.max(
-          0,
-          Math.min(
-            100,
-            percent
-          )
-        );
-
-
-      progressFill.style.width =
-        `${value}%`;
-
-    }
-
-
-    function addMessage(
-      role,
-      text
-    ) {
-
-      const message =
-        document.createElement(
-          "div"
-        );
-
-
-      message.className =
-        `msg ${role}`;
-
-
-      const bubble =
-        document.createElement(
-          "div"
-        );
-
-
-      bubble.className =
-        "bubble";
-
-
-      bubble.textContent =
-        text;
-
-
-      message.appendChild(
-        bubble
-      );
-
-
-      chatContainer.appendChild(
-        message
-      );
-
-
-      chatContainer.scrollTop =
-        chatContainer.scrollHeight;
-
-
-      return bubble;
-
-    }
-
-
-    function getSelectedModel() {
-
-      const option =
-        modelSelect.options[
-          modelSelect.selectedIndex
-        ];
-
-
-      return {
-
-        url:
-          option.value,
-
-        name:
-          option.dataset.name ||
-          option.textContent.trim(),
-
-        size:
-          option.dataset.size ||
-          ""
-
-      };
-
-    }
-
-
-    /* ============================================================
-       Download
-    ============================================================ */
-
-    async function downloadModel(
-      url,
-      token
-    ) {
-
-      downloadController =
-        new AbortController();
-
-
-      const headers = {};
-
-
-      if (token) {
-
-        headers[
-          "Authorization"
-        ] =
-          `Bearer ${token}`;
-
-      }
-
-
-      statusText.textContent =
-        "連線至 Hugging Face...";
-
-
-      const response =
+}
+
+
+/* ============================================================
+   Download model
+============================================================ */
+
+async function downloadModel(
+    model
+) {
+
+    setStatus(
+        `下載 ${model.name}...`
+    );
+
+    showProgress();
+
+    setProgress(
+        0,
+        `準備下載 ${model.approxMB} MB 左右`
+    );
+
+
+    /*
+     * IMPORTANT:
+     *
+     * 不使用：
+     *
+     * const chunks = [];
+     *
+     * reader.read()
+     *
+     * chunks.push(...)
+     *
+     * 因為 iPhone Safari 會因此在 JS heap
+     * 留住大量 Uint8Array。
+     *
+     * 這裡讓瀏覽器自己處理 Response body。
+     */
+
+    const response =
         await fetch(
-          url,
-          {
-            method: "GET",
-
-            headers: headers,
-
-            signal:
-              downloadController.signal,
-
-            cache: "no-store"
-          }
+            model.url,
+            {
+                method: "GET",
+                mode: "cors",
+                credentials: "omit",
+                cache: "no-store"
+            }
         );
 
 
-      if (
-        !response.ok
-      ) {
-
-        if (
-          response.status ===
-          401
-        ) {
-
-          throw new Error(
-            "HTTP 401 未授權。請確認 Hugging Face Token 正確，且 Gemma 已接受 license。"
-          );
-
-        }
-
-
-        if (
-          response.status ===
-          403
-        ) {
-
-          throw new Error(
-            "HTTP 403 禁止存取。請確認 Token 有讀取模型的權限。"
-          );
-
-        }
-
-
-        if (
-          response.status ===
-          404
-        ) {
-
-          throw new Error(
-            "HTTP 404：模型檔案不存在，請確認模型 URL。"
-          );
-
-        }
-
+    if (!response.ok) {
 
         throw new Error(
-          `HTTP ${response.status} ${response.statusText}`
+            `模型下載失敗：HTTP ${response.status}`
         );
-
-      }
-
-
-      if (
-        !response.body
-      ) {
-
-        throw new Error(
-          "瀏覽器不支援 Streaming Response。"
-        );
-
-      }
-
-
-      const contentLength =
-        Number(
-          response.headers.get(
-            "Content-Length"
-          )
-        );
-
-
-      const reader =
-        response.body.getReader();
-
-
-      const chunks = [];
-
-
-      let received =
-        0;
-
-
-      while (true) {
-
-        const result =
-          await reader.read();
-
-
-        if (
-          result.done
-        ) {
-
-          break;
-
-        }
-
-
-        const value =
-          result.value;
-
-
-        chunks.push(
-          value
-        );
-
-
-        received +=
-          value.byteLength;
-
-
-        if (
-          Number.isFinite(
-            contentLength
-          ) &&
-          contentLength > 0
-        ) {
-
-          const percent =
-            (
-              received /
-              contentLength
-            ) *
-            100;
-
-
-          setProgress(
-            percent
-          );
-
-
-          const currentMB =
-            (
-              received /
-              1024 /
-              1024
-            ).toFixed(1);
-
-
-          const totalMB =
-            (
-              contentLength /
-              1024 /
-              1024
-            ).toFixed(1);
-
-
-          statusText.textContent =
-            `下載中 ${Math.round(percent)}% · ${currentMB} / ${totalMB} MB`;
-
-        } else {
-
-          const currentMB =
-            (
-              received /
-              1024 /
-              1024
-            ).toFixed(1);
-
-
-          statusText.textContent =
-            `下載中 · ${currentMB} MB`;
-
-        }
-
-      }
-
-
-      return new Blob(
-        chunks,
-        {
-          type:
-            "application/octet-stream"
-        }
-      );
-
     }
 
 
-    /* ============================================================
-       Initialize LiteRT
-    ============================================================ */
+    /*
+     * 優先讓 Cache Storage 保存 Response。
+     *
+     * clone() 不會建立 JS chunks[]。
+     */
 
-    async function initializeLiteRT(
-      blobUrl
-    ) {
+    if ("caches" in window) {
 
-      statusText.textContent =
-        "載入 LiteRT WebAssembly...";
+        try {
 
+            const cache =
+                await caches.open(CACHE_NAME);
 
-      const wasmPath =
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm";
+            /*
+             * 不阻塞整個模型初始化。
+             *
+             * Cache 寫入在背景進行。
+             */
 
+            cache.put(
+                model.url,
+                response.clone()
+            ).catch(
+                err =>
+                    console.warn(
+                        "Cache write failed:",
+                        err
+                    )
+            );
 
-      const genaiFileset =
-        await FilesetResolver.forGenAiTasks(
-          wasmPath
-        );
+        } catch (error) {
 
-
-      statusText.textContent =
-        "初始化模型至 GPU...";
-
-
-      const inference =
-        await LlmInference.createFromOptions(
-          genaiFileset,
-          {
-            baseOptions: {
-
-              modelAssetPath:
-                blobUrl
-
-            },
-
-            maxTokens:
-              512,
-
-            temperature:
-              0.7,
-
-            topK:
-              40
-          }
-        );
-
-
-      return inference;
-
+            console.warn(
+                "Cache open failed:",
+                error
+            );
+        }
     }
 
 
-    /* ============================================================
-       Load
-    ============================================================ */
+    /*
+     * 直接由 browser 建立 Blob。
+     *
+     * 不使用 chunks[]。
+     */
 
-    async function loadModel() {
-
-      loadBtn.disabled =
-        true;
-
-
-      modelSelect.disabled =
-        true;
+    const blob =
+        await response.blob();
 
 
-      hfTokenInput.disabled =
-        true;
+    hideProgress();
+
+    return blob;
+}
 
 
-      cancelBtn.style.display =
-        "block";
+/* ============================================================
+   Load model from Cache or network
+============================================================ */
 
+async function getModelBlob(model) {
 
-      setProgress(
-        0
-      );
+    /*
+     * 1. Cache
+     */
 
-
-      const model =
-        getSelectedModel();
-
-
-      try {
-
-        /* ---------------------------------
-           Check cache
-        --------------------------------- */
-
-        statusText.textContent =
-          "檢查本機模型快取...";
-
-
-        const cached =
-          await getCachedModel(
+    const cached =
+        await getCachedModel(
             model.url
-          );
+        );
+
+    if (cached) {
+
+        setStatus(
+            `${model.name} 已存在本機 Cache，準備啟動...`
+        );
+
+        try {
+
+            const blob =
+                await cached.blob();
+
+            return blob;
+
+        } catch (error) {
+
+            console.warn(
+                "Cached blob failed:",
+                error
+            );
+        }
+    }
 
 
-        let blob;
+    /*
+     * 2. Download
+     */
+
+    return await downloadModel(model);
+}
 
 
-        if (
-          cached &&
-          cached.blob
-        ) {
+/* ============================================================
+   Release old model
+============================================================ */
 
-          blob =
-            cached.blob;
+async function releaseCurrentModel() {
+
+    sendBtn.disabled = true;
+
+    if (llm) {
+
+        try {
+
+            /*
+             * 不同版本 API 行為可能不同。
+             * 有 close 就使用 close。
+             */
+
+            if (
+                typeof llm.close === "function"
+            ) {
+                await llm.close();
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "LLM close warning:",
+                error
+            );
+        }
+
+        llm = null;
+    }
 
 
-          setProgress(
-            100
-          );
+    /*
+     * 釋放 Object URL
+     */
+
+    if (currentObjectURL) {
+
+        try {
+            URL.revokeObjectURL(
+                currentObjectURL
+            );
+        } catch (e) {}
+
+        currentObjectURL = null;
+    }
 
 
-          statusText.textContent =
-            "使用本機模型快取...";
-
-        } else {
-
-          /* -------------------------------
-             Download
-          -------------------------------- */
-
-          const token =
-            hfTokenInput.value.trim();
+    currentModelKey = null;
 
 
-          blob =
-            await downloadModel(
-              model.url,
-              token
+    /*
+     * 給 Safari 一點時間釋放 WebAssembly /
+     * GPU / Blob 資源。
+     */
+
+    await new Promise(
+        resolve =>
+            setTimeout(resolve, 150)
+    );
+}
+
+
+/* ============================================================
+   Create LLM
+============================================================ */
+
+async function createLLM(
+    model,
+    blob
+) {
+
+    setStatus(
+        `${model.name} 正在啟動 WebGPU...`
+    );
+
+
+    /*
+     * Blob URL
+     */
+
+    currentObjectURL =
+        URL.createObjectURL(blob);
+
+
+    /*
+     * Blob 本身不再需要由 JS 保留。
+     */
+
+    blob = null;
+
+
+    const wasmFileset =
+        await FilesetResolver.forGenAiTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm"
+        );
+
+
+    /*
+     * iPhone 使用比較小的 maxTokens。
+     */
+
+    const maxTokens =
+        isIOS
+            ? model.maxTokensIOS
+            : model.maxTokensDesktop;
+
+
+    llm =
+        await LlmInference.createFromOptions(
+            wasmFileset,
+            {
+                baseOptions: {
+                    modelAssetPath:
+                        currentObjectURL,
+
+                    delegate:
+                        "GPU"
+                },
+
+                maxTokens,
+
+                temperature:
+                    0.7,
+
+                topK:
+                    40
+            }
+        );
+
+
+    currentModelKey =
+        Object.keys(MODELS)
+            .find(
+                key =>
+                    MODELS[key] === model
             );
 
 
-          /* -------------------------------
-             Save cache
-          -------------------------------- */
+    setStatus(
+        `${model.name} 已載入，可以開始聊天。`
+    );
 
-          statusText.textContent =
-            "下載完成，建立本機快取...";
+    sendBtn.disabled = false;
+}
 
 
-          await saveCachedModel(
-            model.url,
-            blob
-          );
+/* ============================================================
+   Load selected model
+============================================================ */
 
+async function loadSelectedModel() {
+
+    if (isLoading) {
+        return;
+    }
+
+    if (isGenerating) {
+        addMessage(
+            "目前正在產生回答，請稍候。",
+            "system"
+        );
+        return;
+    }
+
+
+    const key =
+        modelSelect.value;
+
+    const model =
+        MODELS[key];
+
+    if (!model) {
+        return;
+    }
+
+
+    /*
+     * iPhone + 大模型警告
+     */
+
+    if (
+        isIOS &&
+        !model.iphoneRecommended
+    ) {
+
+        const ok =
+            confirm(
+                "這個模型比較大，在 iPhone Safari 上記憶體壓力較高。\n\n" +
+                "建議使用 Qwen 0.5B。\n\n" +
+                "仍然要載入 Gemma 3 1B 嗎？"
+            );
+
+        if (!ok) {
+
+            modelSelect.value =
+                "qwen05";
+
+            return;
+        }
+    }
+
+
+    isLoading = true;
+
+    loadBtn.disabled = true;
+
+    modelSelect.disabled = true;
+
+    sendBtn.disabled = true;
+
+
+    try {
+
+        /*
+         * WebGPU
+         */
+
+        setStatus(
+            "檢查 WebGPU..."
+        );
+
+        await checkWebGPU();
+
+
+        /*
+         * 釋放舊模型
+         */
+
+        if (llm) {
+
+            setStatus(
+                "釋放上一個模型..."
+            );
+
+            await releaseCurrentModel();
         }
 
 
-        /* ---------------------------------
-           Blob URL
-        --------------------------------- */
+        /*
+         * 取得 Blob
+         */
 
-        if (
-          currentBlobUrl
-        ) {
-
-          URL.revokeObjectURL(
-            currentBlobUrl
-          );
-
-        }
+        const blob =
+            await getModelBlob(
+                model
+            );
 
 
-        currentBlobUrl =
-          URL.createObjectURL(
+        /*
+         * 啟動模型
+         */
+
+        await createLLM(
+            model,
             blob
-          );
-
-
-        /* ---------------------------------
-           LiteRT
-        --------------------------------- */
-
-        llmInference =
-          await initializeLiteRT(
-            currentBlobUrl
-          );
-
-
-        /* ---------------------------------
-           Ready
-        --------------------------------- */
-
-        statusText.textContent =
-          "模型已就緒";
-
-
-        setProgress(
-          100
         );
 
 
-        setupPanel.style.display =
-          "none";
+        /*
+         * 強制移除 JS 參照
+         */
+
+        setStatus(
+            `${model.name} 已就緒。`
+        );
 
 
-        userInput.disabled =
-          false;
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+        hideProgress();
+
+        await releaseCurrentModel();
 
 
-        sendBtn.disabled =
-          false;
+        let message =
+            error?.message ||
+            String(error);
 
 
-        userInput.placeholder =
-          "輸入問題，按 Enter 送出...";
+        if (
+            message.includes("401") ||
+            message.includes("403")
+        ) {
+
+            message +=
+                "\n\n如果是 Gemma，請確認 Hugging Face 已接受 Gemma license。";
+        }
 
 
         addMessage(
-          "ai",
-          `模型「${model.name}」已成功載入。\n\n現在可以開始聊天。`
+            "模型載入失敗：\n" +
+            message,
+            "system"
+        );
+
+        setStatus(
+            "模型載入失敗"
         );
 
 
-        userInput.focus();
+    } finally {
 
-      } catch (error) {
+        isLoading = false;
 
-        console.error(
-          "Model loading error:",
-          error
+        loadBtn.disabled = false;
+
+        modelSelect.disabled = false;
+    }
+}
+
+
+/* ============================================================
+   Generate
+============================================================ */
+
+async function generate() {
+
+    if (!llm) {
+
+        addMessage(
+            "請先載入模型。",
+            "system"
         );
-
-
-        if (
-          error &&
-          error.name ===
-          "AbortError"
-        ) {
-
-          statusText.textContent =
-            "下載已取消";
-
-        } else {
-
-          statusText.textContent =
-            `錯誤：${error?.message || error}`;
-
-
-          addMessage(
-            "ai",
-            `模型載入失敗：\n\n${error?.message || error}`
-          );
-
-        }
-
-
-        loadBtn.disabled =
-          false;
-
-
-        modelSelect.disabled =
-          false;
-
-
-        hfTokenInput.disabled =
-          false;
-
-
-        cancelBtn.style.display =
-          "none";
-
-
-      } finally {
-
-        downloadController =
-          null;
-
-      }
-
-    }
-
-
-    /* ============================================================
-       Cancel
-    ============================================================ */
-
-    function cancelDownload() {
-
-      if (
-        downloadController
-      ) {
-
-        downloadController.abort();
-
-        downloadController =
-          null;
-
-      }
-
-
-      loadBtn.disabled =
-        false;
-
-
-      modelSelect.disabled =
-        false;
-
-
-      hfTokenInput.disabled =
-        false;
-
-
-      cancelBtn.style.display =
-        "none";
-
-
-      setProgress(
-        0
-      );
-
-
-      statusText.textContent =
-        "下載已取消";
-
-    }
-
-
-    /* ============================================================
-       Chat
-    ============================================================ */
-
-    async function sendMessage() {
-
-      const text =
-        userInput.value.trim();
-
-
-      if (
-        !text ||
-        !llmInference ||
-        isBusy
-      ) {
 
         return;
+    }
 
-      }
-
-
-      isBusy =
-        true;
-
-
-      userInput.value =
-        "";
-
-
-      userInput.disabled =
-        true;
-
-
-      sendBtn.disabled =
-        true;
-
-
-      /* User message */
-
-      addMessage(
-        "user",
-        text
-      );
-
-
-      /* AI message */
-
-      const aiBubble =
-        addMessage(
-          "ai",
-          "..."
-        );
-
-
-      try {
-
-        let fullOutput =
-          "";
-
-
-        await llmInference.generateResponse(
-          text,
-          (
-            partialResult,
-            done
-          ) => {
-
-            if (
-              partialResult
-            ) {
-
-              fullOutput +=
-                partialResult;
-
-            }
-
-
-            aiBubble.textContent =
-              fullOutput ||
-              "...";
-
-
-            chatContainer.scrollTop =
-              chatContainer.scrollHeight;
-
-          }
-        );
-
-
-        if (
-          !fullOutput
-        ) {
-
-          aiBubble.textContent =
-            "(模型沒有產生回應)";
-
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Inference error:",
-          error
-        );
-
-
-        aiBubble.textContent =
-          `推理錯誤：${error?.message || error}`;
-
-      } finally {
-
-        isBusy =
-          false;
-
-
-        userInput.disabled =
-          false;
-
-
-        sendBtn.disabled =
-          false;
-
-
-        userInput.focus();
-
-      }
-
+    if (isGenerating) {
+        return;
     }
 
 
-    /* ============================================================
-       Events
-    ============================================================ */
+    const text =
+        input.value.trim();
 
-    loadBtn.addEventListener(
-      "click",
-      loadModel
+    if (!text) {
+        return;
+    }
+
+
+    isGenerating = true;
+
+    sendBtn.disabled = true;
+
+    input.disabled = true;
+
+
+    addMessage(
+        text,
+        "user"
     );
 
-
-    cancelBtn.addEventListener(
-      "click",
-      cancelDownload
-    );
+    input.value = "";
 
 
-    sendBtn.addEventListener(
-      "click",
-      sendMessage
-    );
+    const outputEl =
+        addMessage(
+            "",
+            "ai"
+        );
 
 
-    clearCacheBtn.addEventListener(
-      "click",
-      async () => {
+    try {
 
-        await clearModelCache();
+        /*
+         * MediaPipe LLM Inference API
+         */
 
-        await updateCacheStatus();
+        const result =
+            await llm.generateResponse(
+                text
+            );
 
-      }
-    );
-
-
-    modelSelect.addEventListener(
-      "change",
-      updateCacheStatus
-    );
+        outputEl.textContent =
+            result || "(沒有產生文字)";
 
 
-    userInput.addEventListener(
-      "keydown",
-      event => {
+        messages.scrollTop =
+            messages.scrollHeight;
+
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+        outputEl.textContent =
+            "產生回答時發生錯誤：\n" +
+            (
+                error?.message ||
+                String(error)
+            );
+
+    } finally {
+
+        isGenerating = false;
+
+        sendBtn.disabled = false;
+
+        input.disabled = false;
+
+        input.focus();
+    }
+}
+
+
+/* ============================================================
+   Events
+============================================================ */
+
+loadBtn.addEventListener(
+    "click",
+    loadSelectedModel
+);
+
+
+sendBtn.addEventListener(
+    "click",
+    generate
+);
+
+
+input.addEventListener(
+    "keydown",
+    event => {
+
+        /*
+         * 桌面：
+         * Enter = 發送
+         *
+         * iPhone：
+         * 保留 Enter 作換行，
+         * 避免鍵盤操作不舒服。
+         */
 
         if (
-          event.key === "Enter" &&
-          !event.shiftKey
+            !isIOS &&
+            event.key === "Enter" &&
+            !event.shiftKey
         ) {
 
-          event.preventDefault();
+            event.preventDefault();
 
-          sendMessage();
-
+            generate();
         }
+    }
+);
 
-      }
-    );
+
+/* ============================================================
+   Auto resize textarea
+============================================================ */
+
+input.addEventListener(
+    "input",
+    () => {
+
+        input.style.height =
+            "auto";
+
+        input.style.height =
+            Math.min(
+                input.scrollHeight,
+                130
+            ) + "px";
+    }
+);
 
 
-    /* ============================================================
-       Cleanup
-    ============================================================ */
+/* ============================================================
+   iOS visibility handling
+============================================================ */
 
-    window.addEventListener(
-      "beforeunload",
-      () => {
+document.addEventListener(
+    "visibilitychange",
+    () => {
 
         if (
-          currentBlobUrl
+            document.visibilityState ===
+            "hidden"
         ) {
 
-          URL.revokeObjectURL(
-            currentBlobUrl
-          );
+            /*
+             * 不在背景執行新的工作。
+             */
 
-          currentBlobUrl =
-            null;
-
+            console.log(
+                "Page hidden"
+            );
         }
+    }
+);
 
-      }
-    );
+
+/* ============================================================
+   Prevent accidental unload during loading
+============================================================ */
+
+window.addEventListener(
+    "beforeunload",
+    event => {
+
+        if (isLoading) {
+
+            event.preventDefault();
+
+            event.returnValue = "";
+        }
+    }
+);
 
 
-    /* ============================================================
-       Start
-    ============================================================ */
+/* ============================================================
+   Startup
+============================================================ */
 
-    await checkWebGPU();
+(async function startup() {
 
-    await updateCacheStatus();
+    if (!navigator.gpu) {
 
-  </script>
+        setStatus(
+            "目前瀏覽器沒有 WebGPU，請使用支援 WebGPU 的 Safari。"
+        );
+
+        return;
+    }
+
+
+    if (isIOS) {
+
+        setStatus(
+            "iPhone 模式：建議使用 Qwen 2.5 0.5B。"
+        );
+
+    } else {
+
+        setStatus(
+            "WebGPU 可用，請選擇模型後按「載入」。"
+        );
+    }
+
+})();
+</script>
 
 </body>
 </html>
