@@ -2,518 +2,356 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,viewport-fit=cover"
->
-
-<meta
-  name="apple-mobile-web-app-capable"
-  content="yes"
->
-
-<meta name="theme-color" content="#111827">
-
-<title>V9 · Qwen 0.5B Init Diagnostic</title>
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>V10 · iPhone LLM GPU Diagnostic</title>
 
 <style>
+  * {
+    box-sizing: border-box;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family:
+      -apple-system,
+      BlinkMacSystemFont,
+      "SF Pro Text",
+      "Segoe UI",
+      sans-serif;
+  }
 
-body {
-  margin: 0;
-  background: #111827;
-  color: #f9fafb;
+  h1 {
+    font-size: 22px;
+    margin: 0 0 8px;
+  }
 
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Segoe UI",
-    sans-serif;
-}
+  h2 {
+    font-size: 17px;
+    margin: 22px 0 10px;
+  }
 
-main {
-  width: min(760px, 100%);
-  margin: auto;
+  .sub {
+    color: #8b949e;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
 
-  padding:
-    calc(18px + env(safe-area-inset-top))
-    16px
-    calc(30px + env(safe-area-inset-bottom));
-}
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
 
-h1 {
-  margin: 0 0 6px;
-  font-size: 22px;
-}
+  button {
+    width: 100%;
+    min-height: 48px;
+    margin: 6px 0;
+    border: 0;
+    border-radius: 10px;
+    background: #238636;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+  }
 
-.subtitle {
-  color: #9ca3af;
-  font-size: 13px;
-  line-height: 1.55;
-  margin-bottom: 18px;
-}
+  button.secondary {
+    background: #30363d;
+  }
 
-.card {
-  background: #1f2937;
-  border: 1px solid #374151;
-  border-radius: 14px;
+  button.warning {
+    background: #9e6a03;
+  }
 
-  padding: 15px;
-  margin-bottom: 12px;
-}
+  button:disabled {
+    opacity: 0.45;
+  }
 
-.title {
-  font-weight: 700;
-  margin-bottom: 8px;
-}
+  .status {
+    padding: 10px;
+    border-radius: 9px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
 
-.status {
-  white-space: pre-wrap;
-  word-break: break-word;
+  #log {
+    min-height: 260px;
+    max-height: 55vh;
+    overflow: auto;
+    font-family:
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      monospace;
+    font-size: 12px;
+    line-height: 1.55;
+  }
 
-  font-size: 14px;
-  line-height: 1.6;
-}
+  .ok {
+    color: #3fb950;
+  }
 
-button {
-  width: 100%;
+  .bad {
+    color: #f85149;
+  }
 
-  border: 0;
-  border-radius: 11px;
+  .warn {
+    color: #d29922;
+  }
 
-  padding: 13px 14px;
-  margin-top: 9px;
+  .info {
+    color: #58a6ff;
+  }
 
-  background: #374151;
-  color: white;
-
-  font-size: 15px;
-  font-weight: 600;
-
-  -webkit-tap-highlight-color: transparent;
-}
-
-button:disabled {
-  opacity: .45;
-}
-
-.primary {
-  background: #2563eb;
-}
-
-.green {
-  background: #166534;
-}
-
-.orange {
-  background: #92400e;
-}
-
-.red {
-  background: #7f1d1d;
-}
-
-.log {
-  background: #030712;
-
-  border-radius: 10px;
-
-  padding: 12px;
-
-  min-height: 260px;
-  max-height: 500px;
-
-  overflow: auto;
-
-  white-space: pre-wrap;
-  word-break: break-word;
-
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.ok {
-  color: #86efac;
-}
-
-.warn {
-  color: #fcd34d;
-}
-
-.err {
-  color: #fca5a5;
-}
-
-.info {
-  color: #93c5fd;
-}
-
-.small {
-  color: #9ca3af;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
+  .small {
+    color: #8b949e;
+    font-size: 11px;
+    line-height: 1.5;
+  }
 </style>
 </head>
 
 <body>
 
-<main>
+<h1>V10 · iPhone LLM GPU Diagnostic</h1>
 
-<h1>V9 · Qwen 0.5B 初始化診斷</h1>
-
-<div class="subtitle">
-只測 Qwen 0.5B。<br>
-不載入 Gemma、不建立聊天、不使用 OPFS。<br>
-目的：區分 modelPath 載入問題，與 modelBuffer / GPU 初始化問題。
+<div class="sub">
+  這一版不測 CPU LLM。<br>
+  只分離：WebGPU 本身 → Qwen 0.5B → Gemma 3 1B。
 </div>
-
-
-<!-- =====================================================
-     STATUS
-===================================================== -->
 
 <div class="card">
 
-  <div class="title">
-    狀態
-  </div>
+  <h2>① WebGPU Device</h2>
 
-  <div id="status" class="status">
-V9 準備完成。
+  <button id="gpuBtn">
+    測試 WebGPU Device
+  </button>
+
+  <div id="gpuStatus" class="status">
+    尚未測試
   </div>
 
 </div>
 
-
-<!-- =====================================================
-     BUTTONS
-===================================================== -->
 
 <div class="card">
 
-  <div class="title">
-    診斷
+  <h2>② 模型</h2>
+
+  <button id="downloadQwenBtn" class="secondary">
+    下載 Qwen 0.5B
+  </button>
+
+  <button id="downloadGemmaBtn" class="secondary">
+    下載 Gemma 3 1B
+  </button>
+
+  <button id="deleteBtn" class="warning">
+    清除所有本機模型
+  </button>
+
+  <div id="modelStatus" class="status">
+    尚未檢查 OPFS
   </div>
-
-
-  <button
-    id="gpuBtn"
-    class="primary"
-  >
-    ① WebGPU 診斷
-  </button>
-
-
-  <button
-    id="mpBtn"
-  >
-    ② MediaPipe / WASM
-  </button>
-
-
-  <button
-    id="pathBtn"
-    class="green"
-  >
-    ③ A：createFromModelPath
-  </button>
-
-
-  <button
-    id="bufferBtn"
-    class="orange"
-  >
-    ④ B：fetch + modelAssetBuffer
-  </button>
-
-
-  <button
-    id="resetBtn"
-    class="red"
-  >
-    清除 Marker
-  </button>
 
 </div>
 
-
-<!-- =====================================================
-     LOG
-===================================================== -->
 
 <div class="card">
 
-  <div class="title">
-    診斷紀錄
-  </div>
+  <h2>③ GPU 初始化</h2>
 
-  <div
-    id="log"
-    class="log"
-  ></div>
+  <button id="qwenBtn">
+    Qwen 0.5B · GPU 初始化
+  </button>
+
+  <button id="gemmaBtn">
+    Gemma 3 1B · GPU 初始化
+  </button>
+
+  <div id="initStatus" class="status">
+    尚未開始
+  </div>
 
 </div>
 
-
-<!-- =====================================================
-     INFO
-===================================================== -->
 
 <div class="card">
 
-  <div class="small">
+  <h2>④ Log</h2>
 
-    MediaPipe:
-    @mediapipe/tasks-genai@0.10.29
+  <div id="log" class="status"></div>
 
-    <br><br>
-
-    Model:
-    Qwen2.5-0.5B-Instruct
-
-    <br><br>
-
-    A 測試：
-    createFromModelPath()
-
-    <br>
-
-    B 測試：
-    fetch() → ReadableStreamDefaultReader →
-    createFromOptions()
-
+  <div class="small" style="margin-top:10px;">
+    如果按下 GPU 初始化後整個 Safari 分頁重新載入，
+    而 Log 沒有 catch 到 JavaScript error，
+    請把重新載入後顯示的「上一輪未完成」內容貼給我。
   </div>
-
 </div>
-
-</main>
 
 
 <script type="module">
 
 /* =========================================================
-   CONFIG
-========================================================= */
+   V10
+   MediaPipe Tasks GenAI 0.10.29
+   Qwen 0.5B + Gemma 3 1B
+   OPFS + streaming
+   ========================================================= */
 
-const MP_VERSION =
-  "0.10.29";
-
-
-const MP_MODULE_URL =
-  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`;
-
-
-const WASM_URL =
-  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`;
-
+const MP_VERSION = "0.10.29";
 
 const QWEN_URL =
-  "https://huggingface.co/litert-community/" +
-  "Qwen2.5-0.5B-Instruct/resolve/main/" +
-  "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task";
+  "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task";
 
+const GEMMA_URL =
+  "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4-web.task";
 
-/* =========================================================
-   DOM
-========================================================= */
+const QWEN_FILE = "qwen-0.5b.task";
+const GEMMA_FILE = "gemma3-1b.task";
 
-const statusEl =
-  document.getElementById("status");
+const STAGE_KEY = "v10_llm_stage";
+const TIME_KEY = "v10_llm_stage_time";
 
-const logEl =
-  document.getElementById("log");
-
-const gpuBtn =
-  document.getElementById("gpuBtn");
-
-const mpBtn =
-  document.getElementById("mpBtn");
-
-const pathBtn =
-  document.getElementById("pathBtn");
-
-const bufferBtn =
-  document.getElementById("bufferBtn");
-
-const resetBtn =
-  document.getElementById("resetBtn");
-
-
-/* =========================================================
-   MEDIAPIPE STATE
-========================================================= */
+const logEl = document.getElementById("log");
+const gpuStatus = document.getElementById("gpuStatus");
+const modelStatus = document.getElementById("modelStatus");
+const initStatus = document.getElementById("initStatus");
 
 let FilesetResolver = null;
 let LlmInference = null;
-
 let genai = null;
-let llm = null;
 
-
-/* =========================================================
-   MARKER
-========================================================= */
-
-const MARKER_KEY =
-  "v9_marker";
-
-const MARKER_TIME =
-  "v9_marker_time";
-
-
-function marker(name) {
-
-  try {
-
-    localStorage.setItem(
-      MARKER_KEY,
-      name
-    );
-
-    localStorage.setItem(
-      MARKER_TIME,
-      String(Date.now())
-    );
-
-  } catch (_) {}
-
-}
-
-
-function clearMarker() {
-
-  try {
-
-    localStorage.removeItem(
-      MARKER_KEY
-    );
-
-    localStorage.removeItem(
-      MARKER_TIME
-    );
-
-  } catch (_) {}
-
-}
-
-
-function previousMarker() {
-
-  try {
-
-    const m =
-      localStorage.getItem(
-        MARKER_KEY
-      );
-
-    const t =
-      localStorage.getItem(
-        MARKER_TIME
-      );
-
-    if (!m) {
-      return;
-    }
-
-    let age = "";
-
-    if (t) {
-
-      age =
-        `\n${Math.round(
-          (Date.now() - Number(t)) / 1000
-        )} 秒前`;
-
-    }
-
-    log(
-      "⚠️ 上一輪沒有正常完成：\n" +
-      m +
-      age,
-      "warn"
-    );
-
-    setStatus(
-      "⚠️ 偵測到上一輪 Safari 可能在以下階段終止：\n\n" +
-      m +
-      age
-    );
-
-  } catch (_) {}
-
-}
+let currentLLM = null;
 
 
 /* =========================================================
    LOG
-========================================================= */
+   ========================================================= */
 
 function now() {
-
-  return new Date()
-    .toLocaleTimeString();
-
+  return new Date().toLocaleTimeString();
 }
 
+function log(message, type = "") {
 
-function log(
-  message,
-  type = ""
-) {
+  const line = `[${now()}] ${message}`;
 
-  const div =
-    document.createElement("div");
-
-  div.textContent =
-    `[${now()}] ${message}`;
+  const div = document.createElement("div");
 
   if (type) {
     div.className = type;
   }
 
+  div.textContent = line;
+
   logEl.appendChild(div);
 
-  logEl.scrollTop =
-    logEl.scrollHeight;
+  logEl.scrollTop = logEl.scrollHeight;
 
-  console.log(message);
+  console.log(line);
+}
+
+
+function setStage(stage) {
+
+  localStorage.setItem(STAGE_KEY, stage);
+  localStorage.setItem(
+    TIME_KEY,
+    new Date().toISOString()
+  );
+
+  log(`Stage → ${stage}`, "info");
+}
+
+
+function clearStage() {
+
+  localStorage.removeItem(STAGE_KEY);
+  localStorage.removeItem(TIME_KEY);
 
 }
 
 
-function setStatus(
-  message
-) {
+function checkPreviousStage() {
 
-  statusEl.textContent =
-    message;
+  const stage = localStorage.getItem(STAGE_KEY);
 
-}
-
-
-function errText(error) {
-
-  if (!error) {
-    return "Unknown error";
+  if (!stage) {
+    return;
   }
 
-  return String(
-    error.stack ||
-    error.message ||
-    error
+  const time = localStorage.getItem(TIME_KEY);
+
+  let age = "";
+
+  if (time) {
+
+    const diff =
+      Math.round(
+        (Date.now() - new Date(time).getTime()) / 1000
+      );
+
+    age = `${diff} 秒前`;
+
+  }
+
+  log(
+    `⚠️ 偵測到上一輪未完成：${stage}${age ? " · " + age : ""}`,
+    "warn"
+  );
+
+  initStatus.textContent =
+    `上一輪初始化沒有正常完成：${stage}\n` +
+    `${age ? "時間：" + age : ""}\n\n` +
+    `如果 Safari 是整頁重新載入，這通常不是普通 JS exception。`;
+
+}
+
+
+/* =========================================================
+   DEVICE INFO
+   ========================================================= */
+
+function printDeviceInfo() {
+
+  log(
+    `iOS/Safari UA：${navigator.userAgent}`,
+    "info"
+  );
+
+  log(
+    `deviceMemory：${
+      navigator.deviceMemory ?? "unknown"
+    }`,
+    "info"
+  );
+
+  log(
+    `hardwareConcurrency：${
+      navigator.hardwareConcurrency ?? "unknown"
+    }`,
+    "info"
+  );
+
+  log(
+    `crossOriginIsolated：${
+      self.crossOriginIsolated
+    }`,
+    "info"
   );
 
 }
@@ -521,83 +359,360 @@ function errText(error) {
 
 /* =========================================================
    LOAD MEDIAPIPE
-========================================================= */
+   ========================================================= */
 
 async function loadMediaPipe() {
 
-  if (
-    FilesetResolver &&
-    LlmInference
-  ) {
-
+  if (genai) {
     return;
-
   }
 
+  setStage("LOAD_MEDIAPIPE");
 
   log(
-    `載入 MediaPipe ${MP_VERSION}...`
+    `載入 @mediapipe/tasks-genai@${MP_VERSION} ...`
   );
 
+  try {
 
-  const mod =
-    await import(
-      MP_MODULE_URL
+    const module = await import(
+      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`
     );
 
+    FilesetResolver = module.FilesetResolver;
+    LlmInference = module.LlmInference;
 
-  FilesetResolver =
-    mod.FilesetResolver;
-
-  LlmInference =
-    mod.LlmInference;
-
-
-  if (
-    !FilesetResolver ||
-    !LlmInference
-  ) {
-
-    throw new Error(
-      "MediaPipe API 不完整"
+    log(
+      "MediaPipe JS module ✓",
+      "ok"
     );
 
+    genai = await FilesetResolver.forGenAiTasks(
+      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`
+    );
+
+    log(
+      "MediaPipe WASM fileset ✓",
+      "ok"
+    );
+
+    clearStage();
+
+  } catch (err) {
+
+    log(
+      `MediaPipe 載入失敗：${err?.stack || err}`,
+      "bad"
+    );
+
+    throw err;
   }
-
-
-  log(
-    "MediaPipe JS module ✓",
-    "ok"
-  );
 
 }
 
 
 /* =========================================================
-   GPU
-========================================================= */
+   OPFS
+   ========================================================= */
 
-gpuBtn.onclick =
-async () => {
+async function getOPFS() {
 
-  gpuBtn.disabled = true;
+  if (!navigator.storage?.getDirectory) {
+
+    throw new Error(
+      "此 Safari 不支援 OPFS getDirectory()"
+    );
+
+  }
+
+  return await navigator.storage.getDirectory();
+
+}
+
+
+async function fileExists(name) {
+
+  const root = await getOPFS();
 
   try {
 
-    marker(
-      "GPU · requestAdapter"
+    await root.getFileHandle(name);
+
+    return true;
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+async function getOPFSFile(name) {
+
+  const root = await getOPFS();
+
+  const handle =
+    await root.getFileHandle(name);
+
+  return await handle.getFile();
+
+}
+
+
+/* =========================================================
+   MODEL STATUS
+   ========================================================= */
+
+async function refreshModelStatus() {
+
+  try {
+
+    const qwen =
+      await fileExists(QWEN_FILE);
+
+    const gemma =
+      await fileExists(GEMMA_FILE);
+
+    modelStatus.textContent =
+      `Qwen 0.5B：${qwen ? "✓ 已下載" : "未下載"}\n` +
+      `Gemma 3 1B：${gemma ? "✓ 已下載" : "未下載"}`;
+
+  } catch (err) {
+
+    modelStatus.textContent =
+      `OPFS 錯誤：${err}`;
+
+  }
+
+}
+
+
+/* =========================================================
+   STREAMING DOWNLOAD
+   ========================================================= */
+
+async function downloadModel(
+  url,
+  filename,
+  label
+) {
+
+  const root = await getOPFS();
+
+  log(`開始下載 ${label}`, "info");
+
+  log(
+    "下載方式：HTTP stream → OPFS，避免 chunks[] / Blob"
+  );
+
+  const response = await fetch(url, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+
+    throw new Error(
+      `HTTP ${response.status} ${response.statusText}`
     );
 
+  }
 
-    setStatus(
-      "正在檢查 WebGPU..."
+  if (!response.body) {
+
+    throw new Error(
+      "response.body 不存在，無法 streaming"
     );
 
+  }
+
+  const total =
+    Number(
+      response.headers.get("content-length") || 0
+    );
+
+  if (total) {
 
     log(
-      "========== GPU =========="
+      `Content-Length：${(
+        total / 1024 / 1024
+      ).toFixed(1)} MB`
     );
 
+  }
+
+  const handle =
+    await root.getFileHandle(
+      filename,
+      { create: true }
+    );
+
+  const writable =
+    await handle.createWritable();
+
+  const reader =
+    response.body.getReader();
+
+  let received = 0;
+
+  let lastReport = 0;
+
+  try {
+
+    while (true) {
+
+      const { value, done } =
+        await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      if (value) {
+
+        await writable.write(value);
+
+        received += value.byteLength;
+
+      }
+
+      const nowMs = Date.now();
+
+      if (
+        nowMs - lastReport > 1000
+      ) {
+
+        lastReport = nowMs;
+
+        if (total) {
+
+          const pct =
+            received / total * 100;
+
+          log(
+            `${label}：${pct.toFixed(1)}% ` +
+            `(${(
+              received / 1024 / 1024
+            ).toFixed(1)} MB)`
+          );
+
+        } else {
+
+          log(
+            `${label}：${(
+              received / 1024 / 1024
+            ).toFixed(1)} MB`
+          );
+
+        }
+
+      }
+
+    }
+
+    await writable.close();
+
+  } catch (err) {
+
+    try {
+      await writable.abort();
+    } catch {}
+
+    throw err;
+
+  }
+
+  log(
+    `${label} 下載完成：${(
+      received / 1024 / 1024
+    ).toFixed(1)} MB`,
+    "ok"
+  );
+
+  await refreshModelStatus();
+
+}
+
+
+/* =========================================================
+   DELETE
+   ========================================================= */
+
+async function deleteFileIfExists(name) {
+
+  const root = await getOPFS();
+
+  try {
+
+    await root.removeEntry(name);
+
+    log(
+      `已刪除 ${name}`,
+      "ok"
+    );
+
+  } catch {
+
+    // 不存在就忽略
+
+  }
+
+}
+
+
+async function deleteAllModels() {
+
+  try {
+
+    if (currentLLM) {
+
+      try {
+        currentLLM.close();
+      } catch {}
+
+      currentLLM = null;
+
+      log(
+        "已嘗試關閉目前 LLM"
+      );
+
+    }
+
+    await deleteFileIfExists(QWEN_FILE);
+    await deleteFileIfExists(GEMMA_FILE);
+
+    await refreshModelStatus();
+
+    log(
+      "本機模型清除完成",
+      "ok"
+    );
+
+  } catch (err) {
+
+    log(
+      `清除失敗：${err?.stack || err}`,
+      "bad"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   WEBGPU DEVICE TEST
+   ========================================================= */
+
+async function testWebGPU() {
+
+  setStage("WEBGPU_DEVICE_TEST");
+
+  gpuStatus.textContent =
+    "正在測試 WebGPU Adapter / Device ...";
+
+  try {
 
     if (!navigator.gpu) {
 
@@ -607,660 +722,495 @@ async () => {
 
     }
 
+    log(
+      "navigator.gpu ✓",
+      "ok"
+    );
 
     const adapter =
-      await navigator.gpu
-        .requestAdapter();
-
+      await navigator.gpu.requestAdapter({
+        powerPreference: "high-performance"
+      });
 
     if (!adapter) {
 
       throw new Error(
-        "requestAdapter() = null"
+        "requestAdapter() 回傳 null"
       );
 
     }
 
-
     log(
-      "GPU Adapter ✓",
+      "WebGPU Adapter ✓",
       "ok"
     );
 
+    log(
+      `maxStorageBufferBindingSize：${
+        adapter.limits.maxStorageBufferBindingSize
+      }`
+    );
 
     log(
-      "maxBufferSize = " +
-      bytes(
+      `maxBufferSize：${
         adapter.limits.maxBufferSize
-      )
+      }`
     );
-
-
-    log(
-      "maxStorageBufferBindingSize = " +
-      bytes(
-        adapter.limits
-          .maxStorageBufferBindingSize
-      )
-    );
-
-
-    log(
-      "features = " +
-      Array.from(
-        adapter.features || []
-      ).join(", ")
-    );
-
-
-    clearMarker();
-
-
-    setStatus(
-      "✓ WebGPU 診斷成功"
-    );
-
-
-  } catch (e) {
-
-    clearMarker();
-
-    setStatus(
-      "WebGPU error"
-    );
-
-    log(
-      errText(e),
-      "err"
-    );
-
-  } finally {
-
-    gpuBtn.disabled = false;
-
-  }
-
-};
-
-
-/* =========================================================
-   MEDIAPIPE
-========================================================= */
-
-mpBtn.onclick =
-async () => {
-
-  mpBtn.disabled = true;
-
-  try {
-
-    log(
-      "========== MEDIAPIPE =========="
-    );
-
-
-    marker(
-      "MP · import"
-    );
-
-
-    setStatus(
-      "載入 MediaPipe..."
-    );
-
-
-    await loadMediaPipe();
-
-
-    marker(
-      "MP · FilesetResolver"
-    );
-
-
-    log(
-      "建立 GenAI Fileset..."
-    );
-
-
-    genai =
-      await FilesetResolver
-        .forGenAiTasks(
-          WASM_URL
-        );
-
-
-    clearMarker();
-
-
-    log(
-      "GenAI Fileset ✓",
-      "ok"
-    );
-
-
-    setStatus(
-      "✓ MediaPipe / WASM 測試成功"
-    );
-
-
-  } catch (e) {
-
-    clearMarker();
-
-    setStatus(
-      "MediaPipe error"
-    );
-
-    log(
-      errText(e),
-      "err"
-    );
-
-  } finally {
-
-    mpBtn.disabled = false;
-
-  }
-
-};
-
-
-/* =========================================================
-   A — MODEL PATH
-========================================================= */
-
-pathBtn.onclick =
-async () => {
-
-  pathBtn.disabled = true;
-
-  gpuBtn.disabled = true;
-  mpBtn.disabled = true;
-  bufferBtn.disabled = true;
-
-
-  try {
-
-    log(
-      "========== A · MODEL PATH =========="
-    );
-
-
-    setStatus(
-      "A 測試\n\n" +
-      "createFromModelPath()\n\n" +
-      "如果 Safari 在這裡整頁重載，" +
-      "Marker 會指出這個階段。"
-    );
-
-
-    /* ---------------------------------------------
-       A1
-    --------------------------------------------- */
-
-    marker(
-      "A1 · load MediaPipe"
-    );
-
-
-    await loadMediaPipe();
-
-
-    /* ---------------------------------------------
-       A2
-    --------------------------------------------- */
-
-    marker(
-      "A2 · FilesetResolver"
-    );
-
-
-    if (!genai) {
-
-      genai =
-        await FilesetResolver
-          .forGenAiTasks(
-            WASM_URL
-          );
-
-    }
-
-
-    /* ---------------------------------------------
-       A3
-    --------------------------------------------- */
-
-    marker(
-      "A3 · createFromModelPath"
-    );
-
-
-    log(
-      "⚠️ 即將執行 createFromModelPath()",
-      "warn"
-    );
-
-
-    log(
-      "Model URL："
-    );
-
-
-    log(
-      QWEN_URL
-    );
-
 
     /*
-     * 官方 Web LLM README 使用這條 API。
+     * 不呼叫 requestAdapterInfo()
+     *
+     * Safari 某些版本可能不支援 / 不完整支援。
      */
 
-
-    llm =
-      await LlmInference
-        .createFromModelPath(
-          genai,
-          QWEN_URL
-        );
-
-
-    /* ---------------------------------------------
-       SUCCESS
-    --------------------------------------------- */
-
-    clearMarker();
-
-
     log(
-      "A SUCCESS ✓",
-      "ok"
+      "開始 requestDevice() ..."
     );
 
+    const device =
+      await adapter.requestDevice();
 
-    setStatus(
-      "🎉 A：createFromModelPath 成功！\n\n" +
-      "Qwen 0.5B 已完成 LLM 初始化。"
-    );
+    if (!device) {
 
-
-  } catch (e) {
-
-    clearMarker();
-
-
-    setStatus(
-      "A 發生 JavaScript error"
-    );
-
-
-    log(
-      errText(e),
-      "err"
-    );
-
-
-  } finally {
-
-    pathBtn.disabled = false;
-
-    gpuBtn.disabled = false;
-    mpBtn.disabled = false;
-    bufferBtn.disabled = false;
-
-  }
-
-};
-
-
-/* =========================================================
-   B — FETCH + MODEL BUFFER
-========================================================= */
-
-bufferBtn.onclick =
-async () => {
-
-  bufferBtn.disabled = true;
-
-  gpuBtn.disabled = true;
-  mpBtn.disabled = true;
-  pathBtn.disabled = true;
-
-
-  try {
-
-    log(
-      "========== B · MODEL BUFFER =========="
-    );
-
-
-    setStatus(
-      "B 測試\n\n" +
-      "fetch Qwen → ReadableStream → " +
-      "createFromOptions()\n\n" +
-      "這次不使用 createFromModelPath。"
-    );
-
-
-    /* ---------------------------------------------
-       B1
-    --------------------------------------------- */
-
-    marker(
-      "B1 · load MediaPipe"
-    );
-
-
-    await loadMediaPipe();
-
-
-    /* ---------------------------------------------
-       B2
-    --------------------------------------------- */
-
-    marker(
-      "B2 · FilesetResolver"
-    );
-
-
-    if (!genai) {
-
-      genai =
-        await FilesetResolver
-          .forGenAiTasks(
-            WASM_URL
-          );
+      throw new Error(
+        "requestDevice() 回傳 null"
+      );
 
     }
 
-
     log(
-      "GenAI Fileset ✓",
+      "WebGPU Device ✓",
       "ok"
     );
 
+    /*
+     * 建立一個非常小的 buffer。
+     * 這不是 LLM，只是確認 device 能真的建立 GPU buffer。
+     */
 
-    /* ---------------------------------------------
-       B3
-    --------------------------------------------- */
+    const buffer =
+      device.createBuffer({
+        size: 4096,
+        usage:
+          GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_DST
+      });
 
-    marker(
-      "B3 · fetch Qwen"
-    );
-
-
-    setStatus(
-      "B3 / 4\n\n" +
-      "正在從 Hugging Face 串流 Qwen..."
-    );
-
+    buffer.destroy();
 
     log(
-      "開始 fetch Qwen..."
+      "GPU buffer 建立 / destroy ✓",
+      "ok"
     );
 
+    gpuStatus.textContent =
+      "✓ WebGPU Adapter\n" +
+      "✓ WebGPU Device\n" +
+      "✓ GPU Buffer\n\n" +
+      "基本 WebGPU device 測試通過。";
 
-    const response =
-      await fetch(
-        QWEN_URL,
+    clearStage();
+
+  } catch (err) {
+
+    gpuStatus.textContent =
+      `✗ WebGPU Device 測試失敗\n\n${err}`;
+
+    log(
+      `WebGPU Device FAIL：${err?.stack || err}`,
+      "bad"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   COMMON LLM INITIALIZATION
+   ========================================================= */
+
+async function initLocalModel(
+  filename,
+  label
+) {
+
+  if (!LlmInference || !genai) {
+
+    await loadMediaPipe();
+
+  }
+
+  const exists =
+    await fileExists(filename);
+
+  if (!exists) {
+
+    throw new Error(
+      `${label} 尚未下載`
+    );
+
+  }
+
+  const file =
+    await getOPFSFile(filename);
+
+  log(
+    `${label} 檔案：${(
+      file.size / 1024 / 1024
+    ).toFixed(1)} MB`
+  );
+
+  log(
+    `${label} 建立 ReadableStream ...`
+  );
+
+  /*
+   * 這裡使用 MediaPipe 官方範例採用的方式：
+   *
+   * file.stream().getReader()
+   *
+   * 不做 arrayBuffer()
+   * 不做 Blob
+   * 不做 chunks[]
+   *
+   * 官方 JS sample 目前也是以 modelAssetBuffer
+   * 接 ReadableStream reader。
+   */
+
+  const reader =
+    file.stream().getReader();
+
+  setStage(
+    `${label} · createFromOptions`
+  );
+
+  log(
+    `${label} 開始 LlmInference.createFromOptions() ...`,
+    "warn"
+  );
+
+  const start =
+    performance.now();
+
+  try {
+
+    const llm =
+      await LlmInference.createFromOptions(
+        genai,
         {
-          cache: "no-store"
+          baseOptions: {
+            modelAssetBuffer: reader,
+            delegate: "GPU"
+          },
+
+          /*
+           * 保守設定。
+           *
+           * 注意：
+           * maxTokens 不一定能降低模型初始化階段
+           * 的 GPU / WASM 資源需求。
+           */
+
+          maxTokens: 64,
+
+          topK: 1,
+
+          temperature: 0,
+
+          randomSeed: 1
         }
       );
 
+    const seconds =
+      (
+        performance.now() - start
+      ) / 1000;
 
-    if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status} ${response.statusText}`
-      );
-
-    }
-
-
-    if (!response.body) {
-
-      throw new Error(
-        "response.body 不存在"
-      );
-
-    }
-
-
-    const total =
-      Number(
-        response.headers
-          .get("content-length") || 0
-      );
-
+    clearStage();
 
     log(
-      total
-        ? "Content-Length = " +
-          bytes(total)
-        : "Content-Length 未提供"
-    );
-
-
-    /* ---------------------------------------------
-       B4
-    --------------------------------------------- */
-
-    marker(
-      "B4 · createFromOptions"
-    );
-
-
-    const reader =
-      response.body
-        .getReader();
-
-
-    log(
-      "ReadableStreamDefaultReader ✓",
+      `${label} 初始化成功 ✓ (${seconds.toFixed(1)} 秒)`,
       "ok"
     );
 
+    return llm;
 
-    setStatus(
-      "B4 / 4\n\n" +
-      "⚠️ 即將進入 createFromOptions()\n\n" +
-      "如果 Safari 整頁重載，" +
-      "表示問題不是 OPFS。"
-    );
+  } catch (err) {
 
-
-    log(
-      "⚠️ 即將執行 createFromOptions()",
-      "warn"
-    );
-
-
-    llm =
-      await LlmInference
-        .createFromOptions(
-          genai,
-          {
-            baseOptions: {
-              modelAssetBuffer:
-                reader,
-
-              delegate:
-                "GPU"
-            },
-
-            maxTokens:
-              64,
-
-            topK:
-              1,
-
-            temperature:
-              0,
-
-            randomSeed:
-              1
-          }
-        );
-
-
-    /* ---------------------------------------------
-       SUCCESS
-    --------------------------------------------- */
-
-    clearMarker();
-
+    /*
+     * 如果 Safari 是整個 WebContent process
+     * 被終止，這個 catch 根本不會執行。
+     */
 
     log(
-      "B SUCCESS ✓",
-      "ok"
+      `${label} JavaScript exception：${err?.stack || err}`,
+      "bad"
     );
 
-
-    setStatus(
-      "🎉 B：modelAssetBuffer 成功！\n\n" +
-      "Qwen 0.5B 已完成 GPU 初始化。"
-    );
-
-
-  } catch (e) {
-
-    clearMarker();
-
-
-    setStatus(
-      "B 發生 JavaScript error"
-    );
-
-
-    log(
-      errText(e),
-      "err"
-    );
-
-
-  } finally {
-
-    bufferBtn.disabled = false;
-
-    gpuBtn.disabled = false;
-    mpBtn.disabled = false;
-    pathBtn.disabled = false;
+    throw err;
 
   }
 
-};
+}
 
 
 /* =========================================================
-   RESET
-========================================================= */
+   QWEN
+   ========================================================= */
 
-resetBtn.onclick =
-() => {
+async function testQwen() {
 
-  clearMarker();
-
-  logEl.innerHTML = "";
-
-  llm = null;
-  genai = null;
-
-
-  setStatus(
-    "Marker 已清除。\n\n" +
-    "建議先跑：\n" +
-    "① WebGPU\n" +
-    "② MediaPipe\n" +
-    "③ A\n\n" +
-    "如果 A 重載，再重新開頁後跑 ④ B。"
-  );
-
+  initStatus.textContent =
+    "Qwen 0.5B：初始化中...\n" +
+    "如果 Safari 整頁重載，代表 process 在這裡被終止。";
 
   log(
-    "V9 reset",
+    "=============================="
+  );
+
+  log(
+    "QWEN GPU TEST START",
     "info"
   );
 
-};
+  try {
 
+    await loadMediaPipe();
 
-/* =========================================================
-   FORMAT
-========================================================= */
+    if (currentLLM) {
 
-function bytes(n) {
+      try {
+        currentLLM.close();
+      } catch {}
 
-  if (
-    !Number.isFinite(n)
-  ) {
+      currentLLM = null;
 
-    return "unknown";
+    }
+
+    const llm =
+      await initLocalModel(
+        QWEN_FILE,
+        "QWEN"
+      );
+
+    currentLLM = llm;
+
+    initStatus.textContent =
+      "✓ Qwen 0.5B GPU 初始化成功\n\n" +
+      "這表示：\n" +
+      "• OPFS ✓\n" +
+      "• MediaPipe WASM ✓\n" +
+      "• WebGPU Device ✓\n" +
+      "• Qwen GPU model build ✓";
+
+    log(
+      "QWEN TEST PASS ✓",
+      "ok"
+    );
+
+  } catch (err) {
+
+    initStatus.textContent =
+      `Qwen 初始化失敗：\n${err?.message || err}`;
+
+    log(
+      `QWEN TEST FAIL：${err?.stack || err}`,
+      "bad"
+    );
 
   }
-
-
-  if (
-    n >=
-    1024 * 1024 * 1024
-  ) {
-
-    return (
-      n /
-      1024 /
-      1024 /
-      1024
-    ).toFixed(2) +
-    " GB";
-
-  }
-
-
-  return (
-    n /
-    1024 /
-    1024
-  ).toFixed(1) +
-  " MB";
 
 }
 
 
 /* =========================================================
-   START
-========================================================= */
+   GEMMA
+   ========================================================= */
 
-previousMarker();
+async function testGemma() {
 
+  initStatus.textContent =
+    "Gemma 3 1B：初始化中...\n" +
+    "這是 Qwen 的 GPU 對照測試。";
 
-if (
-  !localStorage.getItem(
-    MARKER_KEY
-  )
-) {
-
-  setStatus(
-    "V9 已準備。\n\n" +
-    "建議順序：\n\n" +
-    "① WebGPU\n" +
-    "② MediaPipe / WASM\n" +
-    "③ A：createFromModelPath\n\n" +
-    "如果 ③ 重載，重新進入頁面後再測 ④。"
+  log(
+    "=============================="
   );
 
+  log(
+    "GEMMA GPU TEST START",
+    "info"
+  );
+
+  try {
+
+    await loadMediaPipe();
+
+    if (currentLLM) {
+
+      try {
+        currentLLM.close();
+      } catch {}
+
+      currentLLM = null;
+
+    }
+
+    const llm =
+      await initLocalModel(
+        GEMMA_FILE,
+        "GEMMA"
+      );
+
+    currentLLM = llm;
+
+    initStatus.textContent =
+      "✓ Gemma 3 1B GPU 初始化成功\n\n" +
+      "這表示：\n" +
+      "• OPFS ✓\n" +
+      "• MediaPipe WASM ✓\n" +
+      "• WebGPU Device ✓\n" +
+      "• Gemma GPU model build ✓";
+
+    log(
+      "GEMMA TEST PASS ✓",
+      "ok"
+    );
+
+  } catch (err) {
+
+    initStatus.textContent =
+      `Gemma 初始化失敗：\n${err?.message || err}`;
+
+    log(
+      `GEMMA TEST FAIL：${err?.stack || err}`,
+      "bad"
+    );
+
+  }
+
 }
 
 
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+document
+  .getElementById("gpuBtn")
+  .onclick = async () => {
+
+    await testWebGPU();
+
+  };
+
+
+document
+  .getElementById("downloadQwenBtn")
+  .onclick = async () => {
+
+    try {
+
+      setStage("DOWNLOAD_QWEN");
+
+      await downloadModel(
+        QWEN_URL,
+        QWEN_FILE,
+        "Qwen 0.5B"
+      );
+
+      clearStage();
+
+    } catch (err) {
+
+      log(
+        `Qwen 下載失敗：${err?.stack || err}`,
+        "bad"
+      );
+
+      clearStage();
+
+    }
+
+  };
+
+
+document
+  .getElementById("downloadGemmaBtn")
+  .onclick = async () => {
+
+    try {
+
+      setStage("DOWNLOAD_GEMMA");
+
+      await downloadModel(
+        GEMMA_URL,
+        GEMMA_FILE,
+        "Gemma 3 1B"
+      );
+
+      clearStage();
+
+    } catch (err) {
+
+      log(
+        `Gemma 下載失敗：${err?.stack || err}`,
+        "bad"
+      );
+
+      clearStage();
+
+    }
+
+  };
+
+
+document
+  .getElementById("deleteBtn")
+  .onclick = async () => {
+
+    await deleteAllModels();
+
+  };
+
+
+document
+  .getElementById("qwenBtn")
+  .onclick = async () => {
+
+    await testQwen();
+
+  };
+
+
+document
+  .getElementById("gemmaBtn")
+  .onclick = async () => {
+
+    await testGemma();
+
+  };
+
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
+
+checkPreviousStage();
+
+printDeviceInfo();
+
+refreshModelStatus();
+
 log(
-  "V9 ready.",
+  "V10 ready",
+  "ok"
+);
+
+log(
+  "先按 ① WebGPU Device，再分別測 Qwen / Gemma。",
   "info"
-);
-
-log(
-  `MediaPipe: ${MP_VERSION}`
-);
-
-log(
-  "Qwen: 0.5B q8"
 );
 
 </script>
