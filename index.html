@@ -2,2516 +2,1823 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-
 <meta
-    name="viewport"
-    content="width=device-width,
-             initial-scale=1,
-             viewport-fit=cover"
->
-
-<meta name="theme-color" content="#0b0f14">
-
-<title>iPhone Local AI - Qwen + Gemma</title>
+  name="viewport"
+  content="width=device-width, initial-scale=1, viewport-fit=cover"
+/>
+<meta name="theme-color" content="#111827">
+<title>iPhone Lite LLM Chat - Qwen + Gemma</title>
 
 <style>
-* {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+  :root {
+    --bg: #0b1020;
+    --panel: #111827;
+    --panel2: #182235;
+    --border: #263247;
+    --text: #eef2ff;
+    --muted: #9ca3af;
+    --accent: #60a5fa;
+    --user: #2563eb;
+    --assistant: #1f2937;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+  }
 
-html,
-body {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
-    background: #0b0f14;
-    color: #f5f5f5;
+    background: var(--bg);
+    color: var(--text);
     font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "SF Pro Display",
-        "PingFang TC",
-        "Noto Sans TC",
-        sans-serif;
-}
+      -apple-system,
+      BlinkMacSystemFont,
+      "SF Pro Text",
+      "SF Pro Display",
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+  }
 
-body {
+  body {
     overflow: hidden;
-}
+  }
 
-button,
-select,
-textarea,
-input {
+  button,
+  select,
+  input,
+  textarea {
     font: inherit;
-}
+  }
 
-button {
-    cursor: pointer;
-}
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-button:disabled {
-    opacity: .45;
-    cursor: default;
-}
-
-/* =========================================================
-   APP
-========================================================= */
-
-#app {
-    width: 100%;
+  .app {
     height: 100dvh;
-    min-height: 100vh;
-
     display: flex;
     flex-direction: column;
+  }
 
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-header {
+  header {
     flex: 0 0 auto;
-
     padding:
-        13px
-        14px
-        10px;
+      calc(env(safe-area-inset-top) + 12px)
+      14px
+      12px;
+    background: rgba(11, 16, 32, 0.96);
+    border-bottom: 1px solid var(--border);
+  }
 
-    background: rgba(11,15,20,.97);
-
-    border-bottom:
-        1px solid #252b34;
-
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-}
-
-.top {
+  .title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-}
+  }
 
-h1 {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.2;
-}
+  .title {
+    font-size: 17px;
+    font-weight: 700;
+  }
 
-.badge {
-    padding: 5px 9px;
-
+  .badge {
+    padding: 4px 8px;
     border-radius: 999px;
-
-    background: #18212c;
-    color: #8fc4ff;
-
+    background: #172033;
+    color: var(--muted);
     font-size: 11px;
     white-space: nowrap;
-}
+  }
 
-/* =========================================================
-   MODEL
-========================================================= */
-
-.model-row {
-    display: grid;
-
-    grid-template-columns:
-        minmax(0, 1fr)
-        auto;
-
-    gap: 8px;
-
+  .controls {
     margin-top: 10px;
-}
+    display: grid;
+    gap: 8px;
+  }
 
-select {
+  select,
+  input {
     width: 100%;
-    min-height: 43px;
-
-    padding:
-        0
-        10px;
-
-    border:
-        1px solid #343c47;
-
-    border-radius: 11px;
-
-    background: #151a21;
-    color: #fff;
-
-    outline: none;
-}
-
-.primary {
-    min-height: 43px;
-
-    padding:
-        0
-        15px;
-
-    border: 0;
-    border-radius: 11px;
-
-    background: #2d7ff9;
-    color: white;
-
-    font-weight: 700;
-}
-
-/* =========================================================
-   TOKEN
-========================================================= */
-
-.token-row {
-    display: none;
-
-    margin-top: 8px;
-}
-
-.token-row.visible {
-    display: block;
-}
-
-.token-label {
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: #858e9a;
-    font-size: 11px;
-}
-
-.token-input {
-    width: 100%;
-
-    min-height: 40px;
-
-    padding:
-        8px
-        10px;
-
-    border:
-        1px solid #343c47;
-
+    border: 1px solid var(--border);
     border-radius: 10px;
-
-    background: #151a21;
-    color: #fff;
-
+    background: var(--panel);
+    color: var(--text);
+    padding: 10px 11px;
     outline: none;
-}
+  }
 
-.token-help {
-    margin-top: 5px;
+  select:focus,
+  input:focus,
+  textarea:focus {
+    border-color: var(--accent);
+  }
 
-    color: #737d89;
-
-    font-size: 10px;
-    line-height: 1.4;
-}
-
-/* =========================================================
-   STATUS
-========================================================= */
-
-.status {
-    min-height: 20px;
-
-    margin-top: 8px;
-
-    color: #a2aab5;
-
-    font-size: 12px;
-    line-height: 1.45;
-
-    white-space: pre-wrap;
-}
-
-.progress {
-    display: none;
-
-    margin-top: 7px;
-}
-
-.progress.show {
-    display: block;
-}
-
-.progress-bg {
-    width: 100%;
-    height: 5px;
-
-    overflow: hidden;
-
-    border-radius: 999px;
-
-    background: #242b34;
-}
-
-.progress-bar {
-    width: 0%;
-    height: 100%;
-
-    background: #2d7ff9;
-
-    transition:
-        width .12s linear;
-}
-
-.progress-info {
+  .row {
     display: flex;
+    gap: 8px;
+  }
 
-    justify-content: space-between;
-
-    margin-top: 4px;
-
-    color: #747e8a;
-
-    font-size: 10px;
-}
-
-/* =========================================================
-   WARNING
-========================================================= */
-
-.warning {
-    display: none;
-
-    margin-top: 7px;
-
-    padding:
-        8px
-        9px;
-
-    border-radius: 9px;
-
-    background: #241f18;
-
-    color: #d6c09b;
-
-    font-size: 11px;
-    line-height: 1.5;
-}
-
-.warning.show {
-    display: block;
-}
-
-/* =========================================================
-   CHAT
-========================================================= */
-
-#messages {
-    flex: 1 1 auto;
-
-    min-height: 0;
-
-    overflow-y: auto;
-
-    -webkit-overflow-scrolling: touch;
-
-    padding:
-        16px
-        13px
-        20px;
-}
-
-.message {
-    max-width: 90%;
-
-    margin-bottom: 12px;
-
-    padding:
-        10px
-        12px;
-
-    border-radius: 14px;
-
-    font-size: 15px;
-    line-height: 1.6;
-
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-
-.message.user {
-    margin-left: auto;
-
-    background: #205fb8;
-
-    border-bottom-right-radius: 5px;
-}
-
-.message.ai {
-    margin-right: auto;
-
-    background: #171c23;
-
-    border:
-        1px solid #282f39;
-
-    border-bottom-left-radius: 5px;
-}
-
-.message.system {
-    max-width: 100%;
-
-    margin-left: auto;
-    margin-right: auto;
-
-    background: transparent;
-
-    color: #7d8793;
-
-    font-size: 11px;
-
-    text-align: center;
-}
-
-/* =========================================================
-   COMPOSER
-========================================================= */
-
-.composer {
-    flex: 0 0 auto;
-
-    padding:
-        9px
-        11px
-        10px;
-
-    background: rgba(11,15,20,.98);
-
-    border-top:
-        1px solid #252b34;
-}
-
-.composer-row {
-    display: flex;
-
-    align-items: flex-end;
-
-    gap: 7px;
-}
-
-textarea {
+  .row > * {
     flex: 1;
-
     min-width: 0;
+  }
 
-    min-height: 44px;
-    max-height: 130px;
-
-    resize: none;
-
-    padding:
-        10px
-        11px;
-
-    border:
-        1px solid #343c47;
-
-    border-radius: 13px;
-
-    background: #151a21;
-    color: white;
-
-    outline: none;
-
-    line-height: 1.45;
-}
-
-textarea:focus {
-    border-color: #2d7ff9;
-}
-
-.send {
-    min-width: 62px;
-    min-height: 44px;
-
+  button {
     border: 0;
-
-    border-radius: 12px;
-
-    background: #2d7ff9;
-
-    color: white;
-
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: var(--accent);
+    color: #07111f;
     font-weight: 700;
-}
+    cursor: pointer;
+  }
 
-/* =========================================================
-   iPHONE
-========================================================= */
+  button.secondary {
+    background: #243047;
+    color: var(--text);
+  }
 
-body.ios .badge {
-    background: #18251d;
-    color: #9ce2ad;
-}
+  button.danger {
+    background: var(--danger);
+    color: white;
+  }
 
-/* =========================================================
-   SMALL SCREEN
-========================================================= */
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 
-@media (max-width: 380px) {
+  .status {
+    margin-top: 8px;
+    min-height: 18px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+  }
 
-    h1 {
-        font-size: 16px;
+  .status.success {
+    color: var(--success);
+  }
+
+  .status.warning {
+    color: var(--warning);
+  }
+
+  .status.error {
+    color: #fca5a5;
+  }
+
+  .progress-wrap {
+    margin-top: 7px;
+    display: none;
+  }
+
+  .progress-wrap.show {
+    display: block;
+  }
+
+  progress {
+    width: 100%;
+    height: 7px;
+    border: 0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .hint {
+    margin-top: 6px;
+    color: #7f8aa0;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .chat {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px;
+  }
+
+  .message {
+    display: flex;
+    margin-bottom: 12px;
+  }
+
+  .message.user {
+    justify-content: flex-end;
+  }
+
+  .bubble {
+    max-width: 88%;
+    padding: 10px 12px;
+    border-radius: 14px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    font-size: 15px;
+  }
+
+  .message.user .bubble {
+    background: var(--user);
+    color: white;
+    border-bottom-right-radius: 5px;
+  }
+
+  .message.assistant .bubble {
+    background: var(--assistant);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 5px;
+  }
+
+  .message.system {
+    justify-content: center;
+  }
+
+  .message.system .bubble {
+    max-width: 95%;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .composer {
+    flex: 0 0 auto;
+    padding:
+      10px
+      12px
+      calc(env(safe-area-inset-bottom) + 10px);
+    background: rgba(11, 16, 32, 0.98);
+    border-top: 1px solid var(--border);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    max-height: 130px;
+    resize: none;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--text);
+    padding: 11px 12px;
+    outline: none;
+    line-height: 1.45;
+  }
+
+  .composer-row {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .composer-row button:first-child {
+    flex: 1;
+  }
+
+  .small {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .diagnostic {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid #3a2d14;
+    border-radius: 8px;
+    background: #19150d;
+    color: #d6b36a;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  @media (min-width: 700px) {
+    header {
+      padding-left: 24px;
+      padding-right: 24px;
     }
 
-    .message {
-        max-width: 94%;
+    .controls {
+      grid-template-columns: 1fr auto;
     }
 
-    .primary {
-        padding: 0 12px;
+    .chat {
+      padding-left: 24px;
+      padding-right: 24px;
     }
-}
 
+    .composer {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .bubble {
+      max-width: 75%;
+    }
+  }
 </style>
 </head>
 
 <body>
 
-<div id="app">
+<div class="app">
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
+  <header>
+    <div class="title-row">
+      <div class="title">📱 iPhone Lite LLM Chat</div>
+      <div class="badge">Qwen + Gemma</div>
+    </div>
 
-    <header>
+    <div class="controls">
 
-        <div class="top">
-
-            <h1>
-                📱 Local AI
-            </h1>
-
-            <div
-                id="deviceBadge"
-                class="badge"
-            >
-                Browser
-            </div>
-
-        </div>
-
-
-        <!-- MODEL -->
-
-        <div class="model-row">
-
-            <select id="modelSelect">
-
-                <option value="qwen">
-                    Qwen 2.5 0.5B · 547 MB · iPhone 推薦
-                </option>
-
-                <option value="gemma">
-                    Gemma 3 1B · 700 MB
-                </option>
-
-            </select>
-
-
-            <button
-                id="loadBtn"
-                class="primary"
-            >
-                載入
-            </button>
-
-        </div>
-
-
-        <!-- GEMMA TOKEN -->
+      <div>
+        <select id="modelSelect">
+          <option value="qwen">Qwen 2.5 0.5B</option>
+          <option value="gemma">Gemma 3 1B</option>
+        </select>
 
         <div
-            id="tokenRow"
-            class="token-row"
+          id="gemmaTokenWrap"
+          class="hidden"
+          style="margin-top:8px;"
         >
-
-            <label
-                class="token-label"
-                for="tokenInput"
-            >
-                Hugging Face Token（Gemma 必要時使用）
-            </label>
-
-            <input
-                id="tokenInput"
-                class="token-input"
-                type="password"
-                placeholder="hf_..."
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="off"
-                spellcheck="false"
-            >
-
-            <div class="token-help">
-                Token 只用於本次下載，不寫入模型檔案或 OPFS。
-                Qwen 不需要 Token。
-            </div>
-
+          <input
+            id="hfToken"
+            type="password"
+            autocomplete="off"
+            placeholder="Gemma Hugging Face Token（需要時才填）"
+          >
         </div>
 
-
-        <!-- STATUS -->
-
-        <div
-            id="status"
-            class="status"
-        >
-            準備完成。
+        <div class="hint">
+          iPhone 低記憶體模式：一次只初始化一個模型。
+          下載完成後直接從 OPFS 串流給 MediaPipe，不建立 Blob URL。
         </div>
+      </div>
 
-
-        <!-- PROGRESS -->
-
-        <div
-            id="progress"
-            class="progress"
-        >
-
-            <div class="progress-bg">
-
-                <div
-                    id="progressBar"
-                    class="progress-bar"
-                ></div>
-
-            </div>
-
-            <div class="progress-info">
-
-                <span id="progressLeft">
-                    0 MB / ?
-                </span>
-
-                <span id="progressRight">
-                    --
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <!-- WARNING -->
-
-        <div
-            id="warning"
-            class="warning"
-        ></div>
-
-    </header>
-
-
-    <!-- =====================================================
-         CHAT
-    ====================================================== -->
-
-    <main id="messages">
-
-        <div class="message system">
-            選擇 Qwen 或 Gemma，然後按「載入」。
-            模型會下載到此網站自己的 OPFS 儲存空間。
-        </div>
-
-    </main>
-
-
-    <!-- =====================================================
-         COMPOSER
-    ====================================================== -->
-
-    <div class="composer">
-
-        <div class="composer-row">
-
-            <textarea
-                id="input"
-                rows="1"
-                placeholder="輸入訊息..."
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="sentences"
-                spellcheck="false"
-            ></textarea>
-
-            <button
-                id="sendBtn"
-                class="send"
-                disabled
-            >
-                發送
-            </button>
-
-        </div>
+      <div class="row">
+        <button id="downloadBtn">下載模型</button>
+        <button id="initBtn" class="secondary" disabled>
+          初始化
+        </button>
+      </div>
 
     </div>
 
-</div>
+    <div id="status" class="status">
+      尚未載入模型
+    </div>
 
+    <div id="progressWrap" class="progress-wrap">
+      <progress id="progress" value="0" max="100"></progress>
+      <div id="progressText" class="small"></div>
+    </div>
+
+    <div id="diagnostic" class="diagnostic hidden"></div>
+  </header>
+
+  <main id="chat" class="chat"></main>
+
+  <div class="composer">
+    <textarea
+      id="prompt"
+      placeholder="輸入訊息..."
+      autocomplete="off"
+      autocorrect="on"
+      autocapitalize="sentences"
+      spellcheck="true"
+    ></textarea>
+
+    <div class="composer-row">
+      <button id="sendBtn" disabled>送出</button>
+      <button id="stopBtn" class="danger" disabled>停止</button>
+      <button id="clearBtn" class="secondary">清除</button>
+    </div>
+  </div>
+
+</div>
 
 <script type="module">
 
-/* ============================================================
-   MediaPipe Tasks GenAI 0.10.29
-============================================================ */
+/* =========================================================
+   MediaPipe Tasks GenAI
+   ========================================================= */
 
 import {
-    FilesetResolver,
-    LlmInference
-} from
-"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
+  FilesetResolver,
+  LlmInference
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
 
 
-/* ============================================================
-   MODEL CONFIG
-============================================================ */
+/* =========================================================
+   Model definitions
+   ========================================================= */
 
 const MODELS = {
 
-    qwen: {
+  qwen: {
+    id: "qwen",
 
-        name:
-            "Qwen 2.5 0.5B",
+    name: "Qwen 2.5 0.5B",
 
-        file:
-            "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+    fileName:
+      "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
 
-        url:
-            "https://huggingface.co/litert-community/" +
-            "Qwen2.5-0.5B-Instruct/resolve/main/" +
-            "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+    url:
+      "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
 
-        expectedMB:
-            547,
+    /*
+     * Qwen repo currently provides the q8 task at about 547 MB.
+     */
+    expectedSizeMB: 547,
 
-        iphone:
-            true,
+    /*
+     * Keep generation conservative on iPhone.
+     */
+    maxTokens: 96,
 
-        maxTokensIOS:
-            256,
+    topK: 20,
 
-        maxTokensDesktop:
-            384
-    },
+    temperature: 0.7
+  },
 
+  gemma: {
+    id: "gemma",
 
-    gemma: {
+    name: "Gemma 3 1B",
 
-        name:
-            "Gemma 3 1B",
+    /*
+     * Low-memory variant:
+     * dynamic int4 / q4, multi-prefill, KV cache 2048.
+     *
+     * This is considerably smaller than the 700 MB
+     * gemma3-1b-it-int4-web.task.
+     */
+    fileName:
+      "Gemma3-1B-IT_multi-prefill-seq_q4_ekv2048.task",
 
-        file:
-            "gemma3-1b-it-int4-web.task",
+    url:
+      "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/Gemma3-1B-IT_multi-prefill-seq_q4_ekv2048.task",
 
-        url:
-            "https://huggingface.co/litert-community/" +
-            "Gemma3-1B-IT/resolve/main/" +
-            "gemma3-1b-it-int4-web.task",
+    expectedSizeMB: 555,
 
-        expectedMB:
-            700,
+    maxTokens: 96,
 
-        iphone:
-            false,
+    topK: 20,
 
-        maxTokensIOS:
-            192,
-
-        maxTokensDesktop:
-            384
-    }
+    temperature: 0.7
+  }
 
 };
 
 
-/* ============================================================
+/* =========================================================
    DOM
-============================================================ */
+   ========================================================= */
 
 const modelSelect =
-    document.getElementById("modelSelect");
+  document.getElementById("modelSelect");
 
-const loadBtn =
-    document.getElementById("loadBtn");
+const gemmaTokenWrap =
+  document.getElementById("gemmaTokenWrap");
+
+const hfTokenInput =
+  document.getElementById("hfToken");
+
+const downloadBtn =
+  document.getElementById("downloadBtn");
+
+const initBtn =
+  document.getElementById("initBtn");
 
 const sendBtn =
-    document.getElementById("sendBtn");
+  document.getElementById("sendBtn");
 
-const input =
-    document.getElementById("input");
+const stopBtn =
+  document.getElementById("stopBtn");
 
-const messages =
-    document.getElementById("messages");
+const clearBtn =
+  document.getElementById("clearBtn");
+
+const promptInput =
+  document.getElementById("prompt");
+
+const chat =
+  document.getElementById("chat");
 
 const statusEl =
-    document.getElementById("status");
+  document.getElementById("status");
 
-const progressEl =
-    document.getElementById("progress");
+const progressWrap =
+  document.getElementById("progressWrap");
 
-const progressBar =
-    document.getElementById("progressBar");
+const progress =
+  document.getElementById("progress");
 
-const progressLeft =
-    document.getElementById("progressLeft");
+const progressText =
+  document.getElementById("progressText");
 
-const progressRight =
-    document.getElementById("progressRight");
-
-const warningEl =
-    document.getElementById("warning");
-
-const tokenRow =
-    document.getElementById("tokenRow");
-
-const tokenInput =
-    document.getElementById("tokenInput");
-
-const deviceBadge =
-    document.getElementById("deviceBadge");
+const diagnostic =
+  document.getElementById("diagnostic");
 
 
-/* ============================================================
-   DEVICE
-============================================================ */
+/* =========================================================
+   State
+   ========================================================= */
 
-const isIOS =
-    /iPhone|iPad|iPod/.test(
-        navigator.userAgent
-    ) ||
-    (
-        navigator.platform === "MacIntel" &&
-        navigator.maxTouchPoints > 1
-    );
-
-const isSafari =
-    /Safari/i.test(
-        navigator.userAgent
-    ) &&
-    !/Chrome|CriOS|Android/i.test(
-        navigator.userAgent
-    );
-
-
-if (isIOS) {
-
-    document.body.classList.add(
-        "ios"
-    );
-
-    deviceBadge.textContent =
-        "iPhone / iPad";
-
-} else {
-
-    deviceBadge.textContent =
-        "WebGPU";
-}
-
-
-/* ============================================================
-   DEFAULT MODEL
-============================================================ */
-
-if (isIOS) {
-
-    modelSelect.value =
-        "qwen";
-
-}
-
-
-/* ============================================================
-   STATE
-============================================================ */
+let currentModelId = "qwen";
 
 let llm = null;
 
-let currentModelKey = null;
+let genaiFileset = null;
 
-let currentObjectURL = null;
-
-let isLoading = false;
+let isInitializing = false;
 
 let isGenerating = false;
 
 let abortController = null;
 
+let currentReader = null;
 
-/* ============================================================
+
+/* =========================================================
+   Session diagnostics
+   ========================================================= */
+
+const INIT_MARKER =
+  "iphone_llm_last_init_attempt";
+
+const INIT_MODEL_MARKER =
+  "iphone_llm_last_init_model";
+
+const INIT_TIME_MARKER =
+  "iphone_llm_last_init_time";
+
+
+function markInitStarted(modelId) {
+  try {
+    sessionStorage.setItem(
+      INIT_MARKER,
+      "1"
+    );
+
+    sessionStorage.setItem(
+      INIT_MODEL_MARKER,
+      modelId
+    );
+
+    sessionStorage.setItem(
+      INIT_TIME_MARKER,
+      new Date().toISOString()
+    );
+  } catch (_) {}
+}
+
+
+function clearInitMarker() {
+  try {
+    sessionStorage.removeItem(INIT_MARKER);
+    sessionStorage.removeItem(INIT_MODEL_MARKER);
+    sessionStorage.removeItem(INIT_TIME_MARKER);
+  } catch (_) {}
+}
+
+
+function checkPreviousCrash() {
+
+  try {
+
+    const marker =
+      sessionStorage.getItem(INIT_MARKER);
+
+    if (!marker) return;
+
+    const model =
+      sessionStorage.getItem(INIT_MODEL_MARKER)
+      || "unknown";
+
+    const time =
+      sessionStorage.getItem(INIT_TIME_MARKER)
+      || "";
+
+    diagnostic.classList.remove("hidden");
+
+    diagnostic.textContent =
+      "⚠️ 偵測到上一次頁面是在「模型初始化」階段中斷。" +
+      " 如果 Safari 當時直接重載，通常代表 WebKit / WASM / GPU 初始化階段的記憶體或底層資源壓力。" +
+      " 本版已改成直接串流模型，且不再建立 Blob URL。" +
+      (time ? ` 上次模型：${model}。` : "");
+
+  } catch (_) {}
+}
+
+
+/* =========================================================
+   UI helpers
+   ========================================================= */
+
+function setStatus(
+  text,
+  type = ""
+) {
+  statusEl.textContent = text;
+  statusEl.className =
+    "status" +
+    (type ? ` ${type}` : "");
+}
+
+
+function showProgress(show) {
+
+  if (show) {
+    progressWrap.classList.add("show");
+  } else {
+    progressWrap.classList.remove("show");
+  }
+}
+
+
+function setProgress(
+  value,
+  text = ""
+) {
+
+  progress.value = value;
+
+  progressText.textContent = text;
+}
+
+
+function addMessage(
+  role,
+  text
+) {
+
+  const row =
+    document.createElement("div");
+
+  row.className =
+    `message ${role}`;
+
+  const bubble =
+    document.createElement("div");
+
+  bubble.className = "bubble";
+
+  bubble.textContent = text;
+
+  row.appendChild(bubble);
+
+  chat.appendChild(row);
+
+  chat.scrollTop =
+    chat.scrollHeight;
+
+  return bubble;
+}
+
+
+function updateLastAssistant(
+  bubble,
+  text
+) {
+
+  bubble.textContent = text;
+
+  chat.scrollTop =
+    chat.scrollHeight;
+}
+
+
+function updateModelUI() {
+
+  currentModelId =
+    modelSelect.value;
+
+  const model =
+    MODELS[currentModelId];
+
+  gemmaTokenWrap.classList.toggle(
+    "hidden",
+    currentModelId !== "gemma"
+  );
+
+  setStatus(
+    `${model.name}：請先下載模型`
+  );
+
+  initBtn.disabled = true;
+
+  sendBtn.disabled = true;
+}
+
+
+/* =========================================================
    OPFS
-============================================================ */
-
-let opfsRoot = null;
-
-
-/*
- * OPFS is deliberately used instead of:
- *
- * - Cache API
- * - IndexedDB Blob
- * - chunks[]
- *
- * because we want the download to be written progressively
- * to browser-managed storage.
- */
+   ========================================================= */
 
 async function getOPFSRoot() {
 
-    if (
-        !navigator.storage ||
-        !navigator.storage.getDirectory
-    ) {
+  if (!("storage" in navigator)) {
+    throw new Error(
+      "此瀏覽器沒有 navigator.storage。"
+    );
+  }
 
-        throw new Error(
-            "此 Safari 不支援 OPFS。\n" +
-            "請更新至 iOS 16.4 以上；" +
-            "若要使用串流檔案下載，建議 iOS 26。"
-        );
-    }
+  if (!("getDirectory" in navigator.storage)) {
+    throw new Error(
+      "此瀏覽器不支援 OPFS。"
+    );
+  }
 
-
-    if (!opfsRoot) {
-
-        opfsRoot =
-            await navigator.storage.getDirectory();
-    }
-
-
-    return opfsRoot;
+  return await navigator.storage.getDirectory();
 }
 
-
-/* ============================================================
-   OPFS FILE
-============================================================ */
 
 async function getModelFileHandle(
-    model
+  model
 ) {
 
-    const root =
-        await getOPFSRoot();
+  const root =
+    await getOPFSRoot();
 
-    return await root.getFileHandle(
-        model.file,
-        {
-            create: true
-        }
-    );
-}
-
-
-/* ============================================================
-   DELETE MODEL
-============================================================ */
-
-async function deleteModelFile(
-    model
-) {
-
-    try {
-
-        const root =
-            await getOPFSRoot();
-
-        await root.removeEntry(
-            model.file
-        );
-
-    } catch (error) {
-
-        /*
-         * Not found is harmless.
-         */
-
-        console.log(
-            "delete model:",
-            error
-        );
+  return await root.getFileHandle(
+    model.fileName,
+    {
+      create: false
     }
+  );
 }
 
 
-/* ============================================================
-   GET SAVED FILE
-============================================================ */
-
-async function getSavedFile(
-    model
+async function modelExists(
+  model
 ) {
 
-    try {
+  try {
 
-        const root =
-            await getOPFSRoot();
-
-        const handle =
-            await root.getFileHandle(
-                model.file
-            );
-
-        const file =
-            await handle.getFile();
-
-        /*
-         * Avoid accepting a zero-byte partial file.
-         */
-
-        if (
-            !file.size ||
-            file.size < 1024 * 1024
-        ) {
-
-            return null;
-        }
-
-        return file;
-
-    } catch (error) {
-
-        return null;
-    }
-}
-
-
-/* ============================================================
-   FORMAT
-============================================================ */
-
-function mb(
-    bytes
-) {
-
-    return (
-        bytes /
-        1024 /
-        1024
-    ).toFixed(1);
-}
-
-
-function formatSpeed(
-    bytesPerSecond
-) {
-
-    if (
-        !bytesPerSecond ||
-        !Number.isFinite(bytesPerSecond)
-    ) {
-
-        return "--";
-    }
-
-
-    if (
-        bytesPerSecond >
-        1024 * 1024
-    ) {
-
-        return (
-            (
-                bytesPerSecond /
-                1024 /
-                1024
-            ).toFixed(1)
-            +
-            " MB/s"
-        );
-
-    }
-
-
-    return (
-        (
-            bytesPerSecond /
-            1024
-        ).toFixed(0)
-        +
-        " KB/s"
-    );
-}
-
-
-/* ============================================================
-   STATUS
-============================================================ */
-
-function setStatus(
-    text
-) {
-
-    statusEl.textContent =
-        text;
-}
-
-
-/* ============================================================
-   WARNING
-============================================================ */
-
-function showWarning(
-    text
-) {
-
-    warningEl.textContent =
-        text;
-
-    warningEl.classList.add(
-        "show"
-    );
-}
-
-
-function hideWarning() {
-
-    warningEl.textContent =
-        "";
-
-    warningEl.classList.remove(
-        "show"
-    );
-}
-
-
-/* ============================================================
-   PROGRESS
-============================================================ */
-
-function showProgress() {
-
-    progressEl.classList.add(
-        "show"
-    );
-}
-
-
-function hideProgress() {
-
-    progressEl.classList.remove(
-        "show"
-    );
-
-    progressBar.style.width =
-        "0%";
-
-    progressLeft.textContent =
-        "0 MB / ?";
-
-    progressRight.textContent =
-        "--";
-}
-
-
-function updateProgress(
-    loaded,
-    total,
-    startedAt
-) {
-
-    const percent =
-        total > 0
-            ? (
-                loaded /
-                total *
-                100
-            )
-            : 0;
-
-
-    if (total > 0) {
-
-        progressBar.style.width =
-            Math.min(
-                100,
-                percent
-            ) +
-            "%";
-
-        progressLeft.textContent =
-            `${mb(loaded)} MB / ${mb(total)} MB`;
-
-    } else {
-
-        progressBar.style.width =
-            "0%";
-
-        progressLeft.textContent =
-            `${mb(loaded)} MB / ?`;
-    }
-
-
-    const elapsed =
-        (
-            performance.now() -
-            startedAt
-        ) /
-        1000;
-
-
-    const speed =
-        elapsed > 0
-            ? loaded / elapsed
-            : 0;
-
-
-    progressRight.textContent =
-        formatSpeed(speed);
-}
-
-
-/* ============================================================
-   MESSAGE
-============================================================ */
-
-function addMessage(
-    text,
-    type
-) {
-
-    const el =
-        document.createElement(
-            "div"
-        );
-
-    el.className =
-        "message " +
-        type;
-
-    el.textContent =
-        text;
-
-    messages.appendChild(
-        el
-    );
-
-    messages.scrollTop =
-        messages.scrollHeight;
-
-    return el;
-}
-
-
-/* ============================================================
-   CHECK WEBGPU
-============================================================ */
-
-async function checkWebGPU() {
-
-    if (!navigator.gpu) {
-
-        throw new Error(
-            "此瀏覽器沒有 WebGPU。\n" +
-            "請使用支援 WebGPU 的新版 Safari。"
-        );
-    }
-
-
-    const adapter =
-        await navigator.gpu.requestAdapter();
-
-
-    if (!adapter) {
-
-        throw new Error(
-            "Safari 找不到可用的 GPU Adapter。"
-        );
-    }
-
+    await getModelFileHandle(model);
 
     return true;
+
+  } catch (_) {
+
+    return false;
+
+  }
 }
 
 
-/* ============================================================
-   CHECK STORAGE
-============================================================ */
-
-async function checkStorage(
-    expectedBytes
+async function getStoredModelSize(
+  model
 ) {
 
-    if (
-        !navigator.storage ||
-        !navigator.storage.estimate
-    ) {
+  try {
 
-        return;
-    }
+    const handle =
+      await getModelFileHandle(model);
 
+    const file =
+      await handle.getFile();
 
-    try {
+    return file.size;
 
-        const estimate =
-            await navigator.storage.estimate();
+  } catch (_) {
 
-        const available =
-            (
-                estimate.quota || 0
-            ) -
-            (
-                estimate.usage || 0
-            );
+    return 0;
 
-
-        /*
-         * Need some headroom.
-         */
-
-        const required =
-            expectedBytes +
-            150 * 1024 * 1024;
-
-
-        if (
-            available > 0 &&
-            available < required
-        ) {
-
-            throw new Error(
-                `瀏覽器可用儲存空間可能不足。\n` +
-                `模型約 ${mb(expectedBytes)} MB，` +
-                `建議至少保留 ${mb(required)} MB。`
-            );
-        }
-
-    } catch (error) {
-
-        if (
-            error instanceof Error &&
-            error.message.includes(
-                "儲存空間"
-            )
-        ) {
-
-            throw error;
-        }
-
-        /*
-         * estimate itself can fail.
-         * Do not block the model.
-         */
-    }
+  }
 }
 
 
-/* ============================================================
-   REQUEST PERSISTENT STORAGE
-============================================================ */
+/* =========================================================
+   Download
+   ========================================================= */
 
-async function requestPersistentStorage() {
-
-    if (
-        navigator.storage &&
-        navigator.storage.persist
-    ) {
-
-        try {
-
-            await navigator.storage.persist();
-
-        } catch (error) {
-
-            console.log(
-                "persist:",
-                error
-            );
-        }
-    }
-}
-
-
-/* ============================================================
-   DOWNLOAD TO OPFS
-============================================================ */
-
-async function downloadToOPFS(
-    model
+async function downloadModel(
+  model
 ) {
 
-    /*
-     * Get HF token only when needed.
-     */
+  if (!navigator.onLine) {
+    throw new Error(
+      "目前離線，無法下載模型。"
+    );
+  }
 
-    let token =
-        tokenInput.value.trim();
+  const root =
+    await getOPFSRoot();
 
+  const oldHandle =
+    await root.getFileHandle(
+      model.fileName,
+      {
+        create: true
+      }
+    );
+
+  /*
+   * createWritable() directly writes into OPFS.
+   * We intentionally do NOT use chunks[].
+   */
+  const writable =
+    await oldHandle.createWritable();
+
+  let response;
+
+  try {
 
     const headers = {};
 
-
-    if (token) {
-
-        headers.Authorization =
-            "Bearer " +
-            token;
-    }
-
-
-    /*
-     * Prepare file.
-     */
-
-    const root =
-        await getOPFSRoot();
-
-
-    /*
-     * Remove old partial file first.
-     */
-
-    try {
-
-        await root.removeEntry(
-            model.file
-        );
-
-    } catch (error) {
-        // Doesn't exist.
-    }
-
-
-    const handle =
-        await root.getFileHandle(
-            model.file,
-            {
-                create: true
-            }
-        );
-
-
-    /*
-     * Safari 26 / modern browsers:
-     *
-     * createWritable()
-     *
-     * writes directly into OPFS.
-     */
+    const token =
+      hfTokenInput.value.trim();
 
     if (
-        typeof handle.createWritable !==
-        "function"
+      model.id === "gemma" &&
+      token
     ) {
-
-        throw new Error(
-            "目前 Safari 沒有 FileSystemWritableFileStream。\n" +
-            "請使用 iOS 26 / Safari 26 以上。"
-        );
+      headers.Authorization =
+        `Bearer ${token}`;
     }
 
+    response =
+      await fetch(
+        model.url,
+        {
+          method: "GET",
+          headers,
+          cache: "no-store",
+          redirect: "follow"
+        }
+      );
 
-    let writable = null;
+    if (!response.ok) {
 
-
-    try {
-
-        /*
-         * Request model.
-         */
-
-        setStatus(
-            `正在連線 Hugging Face...\n${model.name}`
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        throw new Error(
+          "Gemma 下載被 Hugging Face 拒絕。請確認已接受 Gemma 授權，並確認 Token 有權限。"
         );
+      }
 
+      throw new Error(
+        `下載失敗：HTTP ${response.status}`
+      );
+    }
 
-        abortController =
-            new AbortController();
+    if (!response.body) {
+      throw new Error(
+        "瀏覽器沒有提供下載串流。"
+      );
+    }
 
+    const total =
+      Number(
+        response.headers.get(
+          "content-length"
+        )
+      ) || 0;
 
-        const response =
-            await fetch(
-                model.url,
-                {
-                    method: "GET",
+    const reader =
+      response.body.getReader();
 
-                    mode: "cors",
+    let received = 0;
 
-                    credentials: "omit",
+    while (true) {
 
-                    headers,
+      const {
+        value,
+        done
+      } = await reader.read();
 
-                    signal:
-                        abortController.signal
-                }
-            );
+      if (done) break;
 
+      if (value) {
 
-        /*
-         * Clear token from local variable.
-         */
+        await writable.write(value);
 
-        token = "";
-
-
-        /*
-         * HTTP error.
-         */
-
-        if (!response.ok) {
-
-            if (
-                response.status === 401 ||
-                response.status === 403
-            ) {
-
-                throw new Error(
-                    "Hugging Face 拒絕存取模型。\n" +
-                    "Gemma 需要先在 Hugging Face 接受 Gemma license，" +
-                    "並提供有效的 hf_ Token。"
-                );
-            }
-
-
-            throw new Error(
-                `下載失敗：HTTP ${response.status}`
-            );
-        }
-
-
-        if (!response.body) {
-
-            throw new Error(
-                "瀏覽器沒有提供 ReadableStream，無法進行穩定串流下載。"
-            );
-        }
-
-
-        /*
-         * Content-Length
-         */
-
-        const total =
-            Number(
-                response.headers.get(
-                    "content-length"
-                )
-            ) || 0;
-
+        received += value.byteLength;
 
         if (total > 0) {
 
-            await checkStorage(
-                total
+          const pct =
+            Math.min(
+              100,
+              (received / total) * 100
             );
+
+          setProgress(
+            pct,
+            `${formatBytes(received)} / ${formatBytes(total)}`
+          );
 
         } else {
 
-            await checkStorage(
-                model.expectedMB *
-                1024 *
-                1024
-            );
+          setProgress(
+            0,
+            `已下載 ${formatBytes(received)}`
+          );
+
         }
 
-
-        /*
-         * Create OPFS writable stream.
-         */
-
-        writable =
-            await handle.createWritable();
-
-
-        const reader =
-            response.body.getReader();
-
-
-        const startedAt =
-            performance.now();
-
-
-        let loaded = 0;
-
-
-        showProgress();
-
-
-        updateProgress(
-            loaded,
-            total,
-            startedAt
-        );
-
-
-        setStatus(
-            `正在下載 ${model.name}...`
-        );
-
-
-        /*
-         * IMPORTANT:
-         *
-         * 每次只保留目前這一個 chunk。
-         *
-         * 不建立：
-         *
-         * const chunks = [];
-         *
-         */
-
-        while (true) {
-
-            const {
-                value,
-                done
-            } =
-                await reader.read();
-
-
-            if (done) {
-                break;
-            }
-
-
-            if (value) {
-
-                await writable.write(
-                    value
-                );
-
-                loaded +=
-                    value.byteLength;
-
-
-                updateProgress(
-                    loaded,
-                    total,
-                    startedAt
-                );
-            }
-        }
-
-
-        /*
-         * Finish file.
-         */
-
-        await writable.close();
-
-        writable = null;
-
-
-        /*
-         * Verify file size.
-         */
-
-        const finalFile =
-            await handle.getFile();
-
-
-        if (
-            finalFile.size <
-            1024 * 1024
-        ) {
-
-            throw new Error(
-                "下載完成但檔案大小異常。"
-            );
-        }
-
-
-        hideProgress();
-
-
-        setStatus(
-            `${model.name} 下載完成。\n` +
-            `${mb(finalFile.size)} MB`
-        );
-
-
-        /*
-         * Clear token input after successful download.
-         *
-         * This also avoids keeping it in the DOM.
-         */
-
-        tokenInput.value = "";
-
-
-        return finalFile;
-
-
-    } catch (error) {
-
-        /*
-         * Abort / network failure / Safari termination.
-         */
-
-        if (writable) {
-
-            try {
-
-                await writable.abort();
-
-            } catch (e) {}
-        }
-
-
-        /*
-         * Delete incomplete file.
-         */
-
-        try {
-
-            await root.removeEntry(
-                model.file
-            );
-
-        } catch (e) {}
-
-
-        throw error;
-
-    } finally {
-
-        abortController = null;
+      }
     }
+
+    await writable.close();
+
+    return received;
+
+  } catch (error) {
+
+    try {
+      await writable.abort();
+    } catch (_) {}
+
+    /*
+     * If download failed, delete the incomplete file.
+     */
+    try {
+      await root.removeEntry(
+        model.fileName
+      );
+    } catch (_) {}
+
+    throw error;
+  }
 }
 
 
-/* ============================================================
-   GET MODEL FILE
-============================================================ */
+/* =========================================================
+   Initialize LiteRT
+   ========================================================= */
 
-async function getModelFile(
-    model
-) {
+async function ensureFileset() {
 
-    /*
-     * First check OPFS.
-     */
+  if (genaiFileset) {
+    return genaiFileset;
+  }
 
-    const existing =
-        await getSavedFile(
-            model
-        );
+  setStatus(
+    "載入 MediaPipe WASM..."
+  );
 
-
-    if (existing) {
-
-        setStatus(
-            `${model.name} 已存在於本機。\n` +
-            `${mb(existing.size)} MB`
-        );
-
-        return existing;
-    }
-
-
-    /*
-     * Otherwise download.
-     */
-
-    return await downloadToOPFS(
-        model
+  genaiFileset =
+    await FilesetResolver.forGenAiTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm"
     );
+
+  return genaiFileset;
 }
 
 
-/* ============================================================
-   RELEASE MODEL
-============================================================ */
+async function closeLLM() {
 
-async function releaseModel() {
+  if (!llm) return;
 
-    sendBtn.disabled = true;
+  const old =
+    llm;
 
+  llm = null;
 
-    if (llm) {
+  try {
 
-        try {
-
-            if (
-                typeof llm.close ===
-                "function"
-            ) {
-
-                await llm.close();
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "LLM close:",
-                error
-            );
-        }
-
-        llm = null;
+    if (
+      typeof old.close === "function"
+    ) {
+      old.close();
     }
 
+  } catch (_) {}
 
-    currentModelKey = null;
-
-
-    /*
-     * Release Blob URL.
-     */
-
-    if (currentObjectURL) {
-
-        try {
-
-            URL.revokeObjectURL(
-                currentObjectURL
-            );
-
-        } catch (error) {}
-
-        currentObjectURL = null;
-    }
-
-
-    /*
-     * Give Safari/WebKit a little time
-     * to release WASM/GPU resources.
-     */
-
-    await new Promise(
-        resolve =>
-            setTimeout(
-                resolve,
-                250
-            )
-    );
+  /*
+   * Give Safari / WebKit one event-loop turn
+   * to release references before another model
+   * is initialized.
+   */
+  await new Promise(
+    resolve =>
+      setTimeout(resolve, 250)
+  );
 }
 
 
-/* ============================================================
-   INITIALIZE LLM
-============================================================ */
+async function initializeModel() {
 
-async function initializeModel(
-    model,
-    file
-) {
+  if (isInitializing) {
+    return;
+  }
+
+  const model =
+    MODELS[currentModelId];
+
+  isInitializing = true;
+
+  downloadBtn.disabled = true;
+  initBtn.disabled = true;
+  sendBtn.disabled = true;
+
+  /*
+   * Very important:
+   * do not keep a Blob, File object, ArrayBuffer,
+   * or Object URL around while LiteRT initializes.
+   */
+  currentReader = null;
+
+  await closeLLM();
+
+  markInitStarted(
+    currentModelId
+  );
+
+  try {
+
+    const exists =
+      await modelExists(model);
+
+    if (!exists) {
+
+      setStatus(
+        "找不到已下載模型，請先下載。",
+        "warning"
+      );
+
+      return;
+    }
+
+    const fileSize =
+      await getStoredModelSize(model);
 
     setStatus(
-        `${model.name} 準備啟動 WebGPU...`
+      `正在準備 ${model.name}…`
     );
-
 
     /*
      * IMPORTANT:
      *
-     * File comes from OPFS.
+     * We do NOT do:
      *
-     * createObjectURL(File) does not create
-     * another JavaScript Uint8Array copy.
+     *   URL.createObjectURL(file)
+     *
+     * and we do NOT do:
+     *
+     *   await file.arrayBuffer()
+     *
+     * Instead, pass the OPFS stream reader directly
+     * into MediaPipe's modelAssetBuffer.
      */
+    const handle =
+      await getModelFileHandle(model);
 
-    currentObjectURL =
-        URL.createObjectURL(
-            file
-        );
+    const file =
+      await handle.getFile();
 
-
-    /*
-     * Release local File reference
-     * as soon as URL has been created.
-     */
-
-    file = null;
-
+    if (
+      !fileSize ||
+      file.size < 1024 * 1024
+    ) {
+      throw new Error(
+        "模型檔案大小異常，可能是下載未完成。"
+      );
+    }
 
     setStatus(
-        `${model.name} 初始化 LiteRT...`
+      `${model.name}：開始低記憶體初始化…`
     );
 
+    /*
+     * Create the reader immediately before
+     * createFromOptions().
+     */
+    const reader =
+      file.stream().getReader();
 
-    const genai =
-        await FilesetResolver.forGenAiTasks(
-            "https://cdn.jsdelivr.net/npm/" +
-            "@mediapipe/tasks-genai@0.10.29/wasm"
-        );
-
+    currentReader =
+      reader;
 
     /*
-     * iPhone gets shorter generation.
+     * The local "file" variable is intentionally
+     * not stored globally.
+     *
+     * createFromOptions consumes the reader.
      */
+    const fileset =
+      await ensureFileset();
 
-    const maxTokens =
-        isIOS
-            ? model.maxTokensIOS
-            : model.maxTokensDesktop;
+    /*
+     * Let Safari finish the previous async work
+     * before entering WASM/GPU initialization.
+     */
+    await new Promise(
+      resolve =>
+        setTimeout(resolve, 300)
+    );
 
+    /*
+     * This follows the current official MediaPipe
+     * Web sample pattern:
+     *
+     *   baseOptions.modelAssetBuffer = modelStream
+     *
+     * instead of using modelAssetPath/ObjectURL.
+     */
+    const instance =
+      await LlmInference.createFromOptions(
+        fileset,
+        {
+          baseOptions: {
+            modelAssetBuffer: reader,
+            delegate: "GPU"
+          },
 
+          maxTokens:
+            model.maxTokens,
+
+          topK:
+            model.topK,
+
+          temperature:
+            model.temperature,
+
+          randomSeed: 42
+        }
+      );
+
+    /*
+     * Initialization succeeded.
+     */
     llm =
-        await LlmInference.createFromOptions(
-            genai,
-            {
+      instance;
 
-                baseOptions: {
+    currentReader =
+      null;
 
-                    modelAssetPath:
-                        currentObjectURL,
-
-                    delegate:
-                        "GPU"
-                },
-
-
-                maxTokens:
-
-
-                    maxTokens,
-
-
-                temperature:
-                    0.7,
-
-
-                topK:
-                    40
-            }
-        );
-
-
-    currentModelKey =
-        Object.keys(
-            MODELS
-        ).find(
-            key =>
-                MODELS[key] ===
-                model
-        );
-
+    clearInitMarker();
 
     setStatus(
-        `${model.name} 已啟動，可以開始聊天。`
+      `${model.name} 初始化完成，可以開始聊天。`,
+      "success"
     );
-
-
-    sendBtn.disabled =
-        false;
-}
-
-
-/* ============================================================
-   LOAD SELECTED MODEL
-============================================================ */
-
-async function loadSelectedModel() {
-
-    if (isLoading) {
-        return;
-    }
-
-
-    if (isGenerating) {
-
-        addMessage(
-            "目前正在產生回答，請稍候。",
-            "system"
-        );
-
-        return;
-    }
-
-
-    const key =
-        modelSelect.value;
-
-
-    const model =
-        MODELS[key];
-
-
-    if (!model) {
-        return;
-    }
-
-
-    /*
-     * iPhone Gemma warning.
-     */
-
-    if (
-        isIOS &&
-        key === "gemma"
-    ) {
-
-        const ok =
-            confirm(
-                "Gemma 3 1B 約 700 MB。\n\n" +
-                "iPhone Safari 的記憶體壓力會比 Qwen 0.5B 高。\n\n" +
-                "仍然要載入 Gemma 嗎？"
-            );
-
-
-        if (!ok) {
-
-            modelSelect.value =
-                "qwen";
-
-            updateTokenUI();
-
-            return;
-        }
-    }
-
-
-    isLoading = true;
-
-    loadBtn.disabled =
-        true;
-
-    modelSelect.disabled =
-        true;
-
-    sendBtn.disabled =
-        true;
-
-    hideWarning();
-
-
-    try {
-
-        /*
-         * Secure context
-         */
-
-        if (
-            !window.isSecureContext
-        ) {
-
-            throw new Error(
-                "此頁面不是 Secure Context。\n\n" +
-                "請使用 HTTPS 網站開啟這個 HTML。\n" +
-                "不要直接用 file:// 開啟。"
-            );
-        }
-
-
-        /*
-         * WebGPU
-         */
-
-        setStatus(
-            "檢查 WebGPU..."
-        );
-
-        await checkWebGPU();
-
-
-        /*
-         * OPFS
-         */
-
-        await getOPFSRoot();
-
-
-        /*
-         * Persistent storage
-         */
-
-        await requestPersistentStorage();
-
-
-        /*
-         * Release previous model.
-         */
-
-        if (llm) {
-
-            setStatus(
-                "正在釋放上一個模型..."
-            );
-
-            await releaseModel();
-        }
-
-
-        /*
-         * Get model file.
-         */
-
-        const file =
-            await getModelFile(
-                model
-            );
-
-
-        /*
-         * Initialize.
-         */
-
-        await initializeModel(
-            model,
-            file
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            error
-        );
-
-
-        hideProgress();
-
-
-        /*
-         * If aborted, show friendly message.
-         */
-
-        if (
-            error &&
-            error.name ===
-            "AbortError"
-        ) {
-
-            setStatus(
-                "下載已取消。"
-            );
-
-        } else {
-
-            setStatus(
-                "模型載入失敗"
-            );
-
-
-            addMessage(
-                "❌ 模型載入失敗\n\n" +
-                (
-                    error?.message ||
-                    String(error)
-                ),
-                "system"
-            );
-        }
-
-
-        await releaseModel();
-
-
-    } finally {
-
-        isLoading = false;
-
-        loadBtn.disabled =
-            false;
-
-        modelSelect.disabled =
-            false;
-
-        abortController = null;
-    }
-}
-
-
-/* ============================================================
-   CANCEL DOWNLOAD
-============================================================ */
-
-function cancelDownload() {
-
-    if (
-        abortController
-    ) {
-
-        abortController.abort();
-
-        setStatus(
-            "正在取消下載..."
-        );
-    }
-}
-
-
-/* ============================================================
-   GENERATE
-============================================================ */
-
-async function generate() {
-
-    if (!llm) {
-
-        addMessage(
-            "請先載入 Qwen 或 Gemma。",
-            "system"
-        );
-
-        return;
-    }
-
-
-    if (isGenerating) {
-        return;
-    }
-
-
-    const text =
-        input.value.trim();
-
-
-    if (!text) {
-        return;
-    }
-
-
-    isGenerating = true;
-
-    sendBtn.disabled =
-        true;
-
-    input.disabled =
-        true;
-
 
     addMessage(
-        text,
-        "user"
+      "system",
+      `${model.name} 已啟用。`
     );
 
+    sendBtn.disabled = false;
 
-    input.value = "";
+  } catch (error) {
 
-    input.style.height =
-        "auto";
+    currentReader =
+      null;
+
+    /*
+     * If this is a normal JS/WASM rejection,
+     * show it.
+     *
+     * If Safari/WebKit kills the content process,
+     * JS never reaches this catch block; the
+     * sessionStorage marker lets us detect that
+     * on the next page load.
+     */
+    console.error(
+      "LLM initialization failed:",
+      error
+    );
+
+    setStatus(
+      `初始化失敗：${getErrorMessage(error)}`,
+      "error"
+    );
+
+    addMessage(
+      "system",
+      "模型初始化失敗。若 Safari 直接重新整理頁面，請不要連續重試；這通常發生在 WebKit / WASM / GPU 初始化階段。"
+    );
+
+    /*
+     * Keep the marker so that a reload can report
+     * that the previous attempt died during init.
+     */
+  } finally {
+
+    isInitializing =
+      false;
+
+    downloadBtn.disabled = false;
+
+    /*
+     * Only enable init again if LLM wasn't created.
+     */
+    initBtn.disabled =
+      !!llm;
+
+  }
+}
 
 
-    const output =
-        addMessage(
-            "",
-            "ai"
-        );
+/* =========================================================
+   Generate
+   ========================================================= */
 
+async function generateResponse() {
+
+  if (!llm) {
+
+    addMessage(
+      "system",
+      "請先初始化模型。"
+    );
+
+    return;
+  }
+
+  if (isGenerating) {
+    return;
+  }
+
+  const text =
+    promptInput.value.trim();
+
+  if (!text) {
+    return;
+  }
+
+  promptInput.value = "";
+
+  isGenerating = true;
+
+  sendBtn.disabled = true;
+  stopBtn.disabled = false;
+
+  addMessage(
+    "user",
+    text
+  );
+
+  const assistantBubble =
+    addMessage(
+      "assistant",
+      "..."
+    );
+
+  let output = "";
+
+  abortController =
+    new AbortController();
+
+  try {
+
+    /*
+     * Gemma 3 simple turn template.
+     * Qwen also accepts ordinary instruction text.
+     */
+    let query;
+
+    if (currentModelId === "gemma") {
+
+      query =
+        "<start_of_turn>user\n" +
+        text +
+        "<end_of_turn>\n" +
+        "<start_of_turn>model\n";
+
+    } else {
+
+      query =
+        text;
+
+    }
+
+    /*
+     * MediaPipe JS LlmInference API.
+     */
+    await new Promise(
+      (resolve, reject) => {
+
+        let completed = false;
+
+        const finish = () => {
+
+          if (completed) return;
+
+          completed = true;
+
+          resolve();
+
+        };
+
+        try {
+
+          llm.generateResponse(
+            query,
+            (
+              partial,
+              done
+            ) => {
+
+              if (partial) {
+
+                output +=
+                  partial;
+
+                updateLastAssistant(
+                  assistantBubble,
+                  output
+                );
+
+              }
+
+              if (done) {
+                finish();
+              }
+
+            }
+          );
+
+        } catch (error) {
+
+          reject(error);
+
+        }
+
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Generation failed:",
+      error
+    );
+
+    const message =
+      getErrorMessage(error);
+
+    updateLastAssistant(
+      assistantBubble,
+      output
+        ? `${output}\n\n[錯誤：${message}]`
+        : `[錯誤：${message}]`
+    );
+
+  } finally {
+
+    isGenerating = false;
+
+    abortController =
+      null;
+
+    sendBtn.disabled =
+      !llm;
+
+    stopBtn.disabled =
+      true;
+  }
+}
+
+
+/* =========================================================
+   Stop generation
+   ========================================================= */
+
+function stopGeneration() {
+
+  if (!llm) {
+    return;
+  }
+
+  try {
+
+    if (
+      typeof llm.cancelProcessing ===
+      "function"
+    ) {
+      llm.cancelProcessing();
+    }
+
+  } catch (_) {}
+
+  isGenerating = false;
+
+  sendBtn.disabled =
+    !llm;
+
+  stopBtn.disabled =
+    true;
+
+  setStatus(
+    "已停止生成。"
+  );
+}
+
+
+/* =========================================================
+   Delete model
+   ========================================================= */
+
+async function deleteCurrentModel() {
+
+  const model =
+    MODELS[currentModelId];
+
+  await closeLLM();
+
+  try {
+
+    const root =
+      await getOPFSRoot();
+
+    await root.removeEntry(
+      model.fileName
+    );
+
+    setStatus(
+      `${model.name} 已刪除。`
+    );
+
+    initBtn.disabled = true;
+    sendBtn.disabled = true;
+
+  } catch (error) {
+
+    setStatus(
+      `刪除失敗：${getErrorMessage(error)}`,
+      "error"
+    );
+  }
+}
+
+
+/* =========================================================
+   Download button
+   ========================================================= */
+
+downloadBtn.addEventListener(
+  "click",
+  async () => {
+
+    const model =
+      MODELS[currentModelId];
+
+    downloadBtn.disabled =
+      true;
+
+    initBtn.disabled =
+      true;
+
+    showProgress(true);
+
+    setProgress(
+      0,
+      "準備下載…"
+    );
 
     try {
 
-        setStatus(
-            `${MODELS[currentModelKey].name} 正在思考...`
-        );
+      /*
+       * If an old model is alive, close it first.
+       */
+      await closeLLM();
 
+      setStatus(
+        `正在下載 ${model.name}…`
+      );
 
-        const response =
-            await llm.generateResponse(
-                text
-            );
+      const bytes =
+        await downloadModel(model);
 
+      setProgress(
+        100,
+        `${formatBytes(bytes)} 完成`
+      );
 
-        output.textContent =
-            response ||
-            "(沒有產生文字)";
+      setStatus(
+        `${model.name} 下載完成，可以初始化。`,
+        "success"
+      );
 
+      initBtn.disabled =
+        false;
 
-        messages.scrollTop =
-            messages.scrollHeight;
-
-
-        setStatus(
-            `${MODELS[currentModelKey].name} 就緒`
-        );
-
+      addMessage(
+        "system",
+        `${model.name} 已下載到此裝置。`
+      );
 
     } catch (error) {
 
-        console.error(
-            error
-        );
+      console.error(
+        "Download failed:",
+        error
+      );
 
-
-        output.textContent =
-            "產生回答失敗：\n" +
-            (
-                error?.message ||
-                String(error)
-            );
-
-
-        setStatus(
-            "推論發生錯誤"
-        );
-
+      setStatus(
+        `下載失敗：${getErrorMessage(error)}`,
+        "error"
+      );
 
     } finally {
 
-        isGenerating =
-            false;
+      downloadBtn.disabled =
+        false;
 
-        sendBtn.disabled =
-            false;
+      setTimeout(
+        () => showProgress(false),
+        1000
+      );
 
-        input.disabled =
-            false;
-
-        input.focus();
     }
-}
+
+  }
+);
 
 
-/* ============================================================
-   MODEL UI
-============================================================ */
+/* =========================================================
+   Initialize button
+   ========================================================= */
 
-function updateTokenUI() {
+initBtn.addEventListener(
+  "click",
+  async () => {
 
-    if (
-        modelSelect.value ===
-        "gemma"
-    ) {
+    await initializeModel();
 
-        tokenRow.classList.add(
-            "visible"
-        );
+  }
+);
 
-    } else {
 
-        tokenRow.classList.remove(
-            "visible"
-        );
-
-        tokenInput.value = "";
-    }
-}
-
+/* =========================================================
+   Model selector
+   ========================================================= */
 
 modelSelect.addEventListener(
-    "change",
-    updateTokenUI
-);
-
-
-/* ============================================================
-   BUTTONS
-============================================================ */
-
-loadBtn.addEventListener(
-    "click",
-    loadSelectedModel
-);
-
-
-sendBtn.addEventListener(
-    "click",
-    generate
-);
-
-
-/* ============================================================
-   LONG PRESS / SECOND CLICK
-   If loading, clicking Load becomes cancel.
-============================================================ */
-
-loadBtn.addEventListener(
-    "click",
-    () => {
-
-        /*
-         * Handled above.
-         */
-    }
-);
-
-
-/*
- * Separate double action:
- *
- * If download is running, change button to "取消".
- */
-
-setInterval(
-    () => {
-
-        if (isLoading) {
-
-            loadBtn.textContent =
-                "取消";
-
-            loadBtn.onclick =
-                cancelDownload;
-
-        } else {
-
-            loadBtn.textContent =
-                "載入";
-
-            loadBtn.onclick =
-                null;
-        }
-
-    },
-    150
-);
-
-
-/* ============================================================
-   TEXTAREA
-============================================================ */
-
-input.addEventListener(
-    "input",
-    () => {
-
-        input.style.height =
-            "auto";
-
-
-        input.style.height =
-            Math.min(
-                input.scrollHeight,
-                130
-            ) +
-            "px";
-    }
-);
-
-
-/*
- * Desktop Enter sends.
- *
- * iPhone keeps Enter as newline.
- */
-
-input.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            !isIOS &&
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
-
-            event.preventDefault();
-
-            generate();
-        }
-    }
-);
-
-
-/* ============================================================
-   PAGE VISIBILITY
-============================================================ */
-
-document.addEventListener(
-    "visibilitychange",
-    () => {
-
-        if (
-            document.visibilityState ===
-            "hidden"
-        ) {
-
-            console.log(
-                "Local AI page hidden"
-            );
-        }
-    }
-);
-
-
-/* ============================================================
-   STARTUP
-============================================================ */
-
-(async function startup() {
-
-    updateTokenUI();
-
-
-    if (
-        location.protocol ===
-        "file:"
-    ) {
-
-        showWarning(
-            "⚠️ 請不要用 file:// 開啟。\n" +
-            "請把這個 HTML 放到 HTTPS 網站或 localhost。"
-        );
-
-        setStatus(
-            "需要 HTTPS / Secure Context"
-        );
-
-        return;
-    }
-
-
-    if (!window.isSecureContext) {
-
-        showWarning(
-            "⚠️ 此頁面不是 Secure Context。\n" +
-            "OPFS / WebGPU 可能無法正常工作。"
-        );
-    }
-
-
-    if (!navigator.gpu) {
-
-        showWarning(
-            "⚠️ 找不到 WebGPU。\n" +
-            "請確認 iPhone / Safari 版本支援 WebGPU。"
-        );
-
-        setStatus(
-            "WebGPU 不可用"
-        );
-
-        return;
-    }
-
+  "change",
+  async () => {
 
     /*
-     * Test OPFS.
+     * Switching models must release the previous
+     * inference instance first.
      */
+    await closeLLM();
 
-    try {
+    updateModelUI();
 
-        await getOPFSRoot();
+    const model =
+      MODELS[currentModelId];
 
-    } catch (error) {
+    const exists =
+      await modelExists(model);
 
-        showWarning(
-            "⚠️ OPFS 不可用。\n" +
-            "請使用新版 iOS Safari。"
-        );
+    if (exists) {
 
-        setStatus(
-            "OPFS 不可用"
-        );
+      const size =
+        await getStoredModelSize(model);
 
-        return;
-    }
+      setStatus(
+        `${model.name} 已下載 (${formatBytes(size)})，可以初始化。`,
+        "success"
+      );
 
-
-    if (isIOS) {
-
-        setStatus(
-            "iPhone 模式已啟用。\n" +
-            "建議先使用 Qwen 0.5B。"
-        );
+      initBtn.disabled =
+        false;
 
     } else {
 
-        setStatus(
-            "WebGPU + OPFS 已就緒。"
-        );
+      setStatus(
+        `${model.name} 尚未下載。`
+      );
+
     }
 
-})();
+  }
+);
+
+
+/* =========================================================
+   Send
+   ========================================================= */
+
+sendBtn.addEventListener(
+  "click",
+  generateResponse
+);
+
+
+/* =========================================================
+   Stop
+   ========================================================= */
+
+stopBtn.addEventListener(
+  "click",
+  stopGeneration
+);
+
+
+/* =========================================================
+   Clear
+   ========================================================= */
+
+clearBtn.addEventListener(
+  "click",
+  () => {
+
+    chat.innerHTML = "";
+
+  }
+);
+
+
+/* =========================================================
+   Keyboard
+   ========================================================= */
+
+promptInput.addEventListener(
+  "keydown",
+  event => {
+
+    /*
+     * On iPhone this normally comes from
+     * the return key, so don't force Enter to send.
+     *
+     * Desktop:
+     * Cmd/Ctrl + Enter = send.
+     */
+    if (
+      (event.metaKey ||
+       event.ctrlKey) &&
+      event.key === "Enter"
+    ) {
+
+      event.preventDefault();
+
+      generateResponse();
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   Page lifecycle
+   ========================================================= */
+
+document.addEventListener(
+  "visibilitychange",
+  () => {
+
+    if (
+      document.visibilityState ===
+      "hidden"
+    ) {
+
+      /*
+       * Do not automatically close the model here.
+       *
+       * Safari can temporarily background the page.
+       * Automatically closing/reinitializing can itself
+       * create additional memory churn.
+       */
+    }
+
+  }
+);
+
+
+/* =========================================================
+   Utility
+   ========================================================= */
+
+function formatBytes(bytes) {
+
+  if (!Number.isFinite(bytes)) {
+    return "0 B";
+  }
+
+  const units = [
+    "B",
+    "KB",
+    "MB",
+    "GB"
+  ];
+
+  let value = bytes;
+  let index = 0;
+
+  while (
+    value >= 1024 &&
+    index < units.length - 1
+  ) {
+
+    value /= 1024;
+    index++;
+
+  }
+
+  return `${value.toFixed(
+    index === 0 ? 0 : 1
+  )} ${units[index]}`;
+}
+
+
+function getErrorMessage(error) {
+
+  if (!error) {
+    return "未知錯誤";
+  }
+
+  if (
+    typeof error === "string"
+  ) {
+    return error;
+  }
+
+  if (error.message) {
+    return error.message;
+  }
+
+  try {
+    return String(error);
+  } catch (_) {
+    return "未知錯誤";
+  }
+}
+
+
+/* =========================================================
+   Startup
+   ========================================================= */
+
+async function startup() {
+
+  checkPreviousCrash();
+
+  updateModelUI();
+
+  addMessage(
+    "system",
+    "iPhone 低記憶體版已啟動。請先下載 Qwen 或 Gemma，再按「初始化」。"
+  );
+
+  /*
+   * Check the default Qwen model.
+   */
+  try {
+
+    const model =
+      MODELS[currentModelId];
+
+    const exists =
+      await modelExists(model);
+
+    if (exists) {
+
+      const size =
+        await getStoredModelSize(model);
+
+      setStatus(
+        `${model.name} 已存在 (${formatBytes(size)})，可以初始化。`,
+        "success"
+      );
+
+      initBtn.disabled =
+        false;
+
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "OPFS startup check failed:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   Start
+   ========================================================= */
+
+startup();
+
 </script>
 
 </body>
