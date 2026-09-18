@@ -2,367 +2,2171 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Gemma WebGPU iPhone Test</title>
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
+>
+
+<meta name="theme-color" content="#f5f5f7">
+
+<title>Gemma 3 1B · WebGPU Chat</title>
 
 <style>
-  * { box-sizing: border-box; }
 
-  body {
-    margin: 0;
-    padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f5f5f7;
-    color: #111;
+:root {
+  --bg: #f5f5f7;
+  --panel: #ffffff;
+  --text: #111111;
+  --muted: #777777;
+  --border: #dedee3;
+  --user: #111111;
+  --user-text: #ffffff;
+  --assistant: #eeeeF2;
+  --danger: #d92d20;
+  --accent: #111111;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "SF Pro Display",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+body {
+  overflow: hidden;
+}
+
+/* =========================
+   APP
+========================= */
+
+.app {
+  width: 100%;
+  height: 100dvh;
+
+  display: flex;
+  flex-direction: column;
+
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  background: var(--bg);
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.header {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding:
+    12px
+    14px
+    10px
+    14px;
+
+  background: rgba(255,255,255,.92);
+
+  border-bottom: 1px solid var(--border);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  z-index: 10;
+}
+
+.titleArea {
+  min-width: 0;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin-top: 3px;
+
+  font-size: 11px;
+  color: var(--muted);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerButtons {
+  display: flex;
+  gap: 7px;
+}
+
+.iconButton {
+  width: 38px;
+  height: 38px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #fff;
+  color: #111;
+
+  font-size: 17px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:active {
+  transform: scale(.95);
+}
+
+.iconButton:disabled {
+  opacity: .35;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.statusBar {
+  flex: 0 0 auto;
+
+  padding: 7px 14px;
+
+  font-size: 11px;
+
+  color: var(--muted);
+
+  background: #fafafa;
+
+  border-bottom: 1px solid #e7e7eb;
+
+  min-height: 30px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusBar.ready {
+  color: #16794a;
+}
+
+.statusBar.error {
+  color: var(--danger);
+}
+
+/* =========================
+   CHAT
+========================= */
+
+.chat {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  -webkit-overflow-scrolling: touch;
+
+  padding:
+    16px
+    12px
+    18px
+    12px;
+}
+
+.chatInner {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* =========================
+   WELCOME
+========================= */
+
+.welcome {
+  padding: 35px 18px 30px;
+  text-align: center;
+}
+
+.logo {
+  width: 64px;
+  height: 64px;
+
+  margin: 0 auto 15px;
+
+  border-radius: 20px;
+
+  background: #111;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.welcome h1 {
+  margin: 0;
+
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.welcome p {
+  margin: 10px auto 0;
+
+  max-width: 430px;
+
+  color: var(--muted);
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.featureList {
+  margin-top: 22px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  text-align: left;
+}
+
+.feature {
+  padding: 11px 13px;
+
+  background: white;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  font-size: 13px;
+}
+
+/* =========================
+   MESSAGE
+========================= */
+
+.messageRow {
+  display: flex;
+
+  margin: 10px 0;
+}
+
+.messageRow.user {
+  justify-content: flex-end;
+}
+
+.messageRow.assistant {
+  justify-content: flex-start;
+}
+
+.message {
+  max-width: min(86%, 680px);
+
+  padding: 11px 13px;
+
+  border-radius: 17px;
+
+  font-size: 15px;
+  line-height: 1.6;
+
+  word-break: break-word;
+
+  white-space: pre-wrap;
+}
+
+.message.user {
+  background: var(--user);
+  color: var(--user-text);
+
+  border-bottom-right-radius: 5px;
+}
+
+.message.assistant {
+  background: var(--assistant);
+  color: var(--text);
+
+  border-bottom-left-radius: 5px;
+}
+
+.messageMeta {
+  margin-top: 5px;
+
+  font-size: 10px;
+
+  color: var(--muted);
+}
+
+.message.user + .messageMeta {
+  text-align: right;
+}
+
+/* =========================
+   TYPING
+========================= */
+
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+
+  height: 20px;
+}
+
+.typing span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #777;
+
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: .15s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: .30s;
+}
+
+@keyframes blink {
+
+  0%, 80%, 100% {
+    opacity: .25;
+    transform: translateY(0);
   }
 
-  .box {
-    max-width: 720px;
-    margin: auto;
-    background: white;
-    border-radius: 18px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.08);
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
   }
 
-  h1 {
-    font-size: 22px;
-    margin-top: 0;
+}
+
+/* =========================
+   INPUT
+========================= */
+
+.inputArea {
+  flex: 0 0 auto;
+
+  padding:
+    8px
+    10px
+    max(10px, env(safe-area-inset-bottom))
+    10px;
+
+  background: rgba(255,255,255,.96);
+
+  border-top: 1px solid var(--border);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.inputInner {
+  width: 100%;
+  max-width: 780px;
+
+  margin: 0 auto;
+
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+textarea {
+  flex: 1;
+
+  min-width: 0;
+
+  min-height: 45px;
+  max-height: 140px;
+
+  resize: none;
+
+  padding:
+    12px
+    13px;
+
+  border:
+    1px solid
+    var(--border);
+
+  border-radius: 15px;
+
+  background: #f8f8fa;
+
+  color: #111;
+
+  outline: none;
+
+  font-family: inherit;
+  font-size: 16px;
+
+  line-height: 1.4;
+}
+
+textarea:focus {
+  border-color: #aaa;
+  background: #fff;
+}
+
+textarea:disabled {
+  opacity: .55;
+}
+
+.sendButton {
+  flex: 0 0 auto;
+
+  width: 46px;
+  height: 46px;
+
+  border: 0;
+
+  border-radius: 15px;
+
+  background: #111;
+  color: white;
+
+  font-size: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendButton:active {
+  transform: scale(.95);
+}
+
+.sendButton:disabled {
+  opacity: .35;
+}
+
+/* =========================
+   LOADING OVERLAY
+========================= */
+
+.overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(245,245,247,.94);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.loadingCard {
+  width: min(430px, 100%);
+
+  padding: 24px;
+
+  border-radius: 20px;
+
+  background: white;
+
+  border: 1px solid var(--border);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.12);
+}
+
+.loadingIcon {
+  width: 52px;
+  height: 52px;
+
+  margin-bottom: 15px;
+
+  border-radius: 16px;
+
+  background: #111;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.loadingTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.loadingText {
+  margin-top: 7px;
+
+  font-size: 13px;
+  line-height: 1.5;
+
+  color: var(--muted);
+
+  min-height: 40px;
+}
+
+.progressOuter {
+  margin-top: 16px;
+
+  height: 7px;
+
+  border-radius: 10px;
+
+  background: #e9e9ed;
+
+  overflow: hidden;
+}
+
+.progressInner {
+  width: 0%;
+
+  height: 100%;
+
+  background: #111;
+
+  border-radius: inherit;
+
+  transition: width .15s ease;
+}
+
+.progressText {
+  margin-top: 8px;
+
+  text-align: right;
+
+  font-size: 11px;
+
+  color: var(--muted);
+}
+
+/* =========================
+   STOP BUTTON
+========================= */
+
+.stopButton {
+  position: fixed;
+
+  left: 50%;
+  bottom:
+    calc(
+      78px +
+      env(safe-area-inset-bottom)
+    );
+
+  transform: translateX(-50%);
+
+  z-index: 20;
+
+  padding: 9px 15px;
+
+  border: 1px solid var(--border);
+  border-radius: 20px;
+
+  background: rgba(255,255,255,.94);
+
+  color: #111;
+
+  box-shadow:
+    0 4px 18px rgba(0,0,0,.12);
+
+  font-size: 12px;
+
+  display: none;
+}
+
+.stopButton.visible {
+  display: block;
+}
+
+/* =========================
+   DEBUG
+========================= */
+
+.debugPanel {
+  display: none;
+
+  position: fixed;
+
+  inset: auto 10px 80px 10px;
+
+  max-height: 45vh;
+
+  overflow: auto;
+
+  z-index: 50;
+
+  padding: 12px;
+
+  border-radius: 14px;
+
+  background: rgba(20,20,20,.94);
+  color: #fff;
+
+  font-family: monospace;
+  font-size: 11px;
+
+  white-space: pre-wrap;
+}
+
+.debugPanel.show {
+  display: block;
+}
+
+/* =========================
+   DESKTOP
+========================= */
+
+@media (min-width: 700px) {
+
+  .header {
+    padding-left: 22px;
+    padding-right: 22px;
   }
 
-  #status {
-    white-space: pre-wrap;
-    background: #f0f0f2;
-    border-radius: 12px;
-    padding: 12px;
-    min-height: 100px;
-    margin-bottom: 15px;
-    font-size: 14px;
+  .chat {
+    padding-left: 22px;
+    padding-right: 22px;
   }
 
-  textarea {
-    width: 100%;
-    min-height: 100px;
-    resize: vertical;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    padding: 12px;
-    font-size: 16px;
+  .message {
+    font-size: 15px;
   }
 
-  button {
-    width: 100%;
-    margin-top: 10px;
-    padding: 14px;
-    border: 0;
-    border-radius: 12px;
-    background: #111;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-  }
+}
 
-  button:disabled {
-    opacity: .4;
-  }
-
-  #output {
-    margin-top: 15px;
-    padding: 15px;
-    background: #f0f0f2;
-    border-radius: 12px;
-    white-space: pre-wrap;
-    min-height: 100px;
-  }
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="app">
 
-  <h1>Gemma 3 1B · WebGPU Test</h1>
+  <!-- HEADER -->
 
-  <div id="status">正在檢查 WebGPU…</div>
+  <header class="header">
 
-  <textarea id="prompt"
-    placeholder="輸入問題，例如：用一句話介紹台灣。"></textarea>
+    <div class="titleArea">
 
-  <button id="loadBtn">
-    載入 Gemma 3 1B
-  </button>
+      <div class="title">
+        Gemma 3 1B
+      </div>
 
-  <button id="runBtn" disabled>
-    開始生成
-  </button>
+      <div class="subtitle">
+        WebGPU · 本機運算 · 不上傳對話
+      </div>
 
-  <div id="output"></div>
+    </div>
+
+    <div class="headerButtons">
+
+      <button
+        id="debugBtn"
+        class="iconButton"
+        type="button"
+        title="Debug"
+      >
+        ⚙
+      </button>
+
+      <button
+        id="clearBtn"
+        class="iconButton"
+        type="button"
+        title="清除對話"
+        disabled
+      >
+        ↺
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- STATUS -->
+
+  <div
+    id="statusBar"
+    class="statusBar"
+  >
+    尚未載入 Gemma
+  </div>
+
+
+  <!-- CHAT -->
+
+  <main
+    id="chat"
+    class="chat"
+  >
+
+    <div
+      id="chatInner"
+      class="chatInner"
+    >
+
+      <div
+        id="welcome"
+        class="welcome"
+      >
+
+        <div class="logo">
+          G
+        </div>
+
+        <h1>
+          Gemma 3 1B
+        </h1>
+
+        <p>
+          直接在你的 iPhone Safari 上使用 WebGPU
+          執行 Gemma。對話內容不需要送到伺服器。
+        </p>
+
+        <div class="featureList">
+
+          <div class="feature">
+            ⚡ WebGPU 原生推論
+          </div>
+
+          <div class="feature">
+            🔒 對話留在瀏覽器
+          </div>
+
+          <div class="feature">
+            💬 支援多輪對話
+          </div>
+
+          <div class="feature">
+            📱 專為手機畫面調整
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- INPUT -->
+
+  <section class="inputArea">
+
+    <div class="inputInner">
+
+      <textarea
+        id="input"
+        rows="1"
+        placeholder="輸入訊息…"
+        disabled
+      ></textarea>
+
+      <button
+        id="sendBtn"
+        class="sendButton"
+        type="button"
+        disabled
+        aria-label="送出"
+      >
+        ↑
+      </button>
+
+    </div>
+
+  </section>
 
 </div>
 
+
+<!-- STOP -->
+
+<button
+  id="stopBtn"
+  class="stopButton"
+  type="button"
+>
+  ■ 停止生成
+</button>
+
+
+<!-- LOADING -->
+
+<div
+  id="overlay"
+  class="overlay"
+>
+
+  <div class="loadingCard">
+
+    <div class="loadingIcon">
+      G
+    </div>
+
+    <div class="loadingTitle">
+      載入 Gemma 3 1B
+    </div>
+
+    <div
+      id="loadingText"
+      class="loadingText"
+    >
+      正在準備 WebGPU…
+    </div>
+
+    <div class="progressOuter">
+
+      <div
+        id="progressInner"
+        class="progressInner"
+      ></div>
+
+    </div>
+
+    <div
+      id="progressText"
+      class="progressText"
+    >
+      0%
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- DEBUG -->
+
+<pre
+  id="debugPanel"
+  class="debugPanel"
+></pre>
+
+
 <script type="module">
 
-const statusEl = document.getElementById("status");
-const outputEl = document.getElementById("output");
-const loadBtn = document.getElementById("loadBtn");
-const runBtn = document.getElementById("runBtn");
-const promptEl = document.getElementById("prompt");
+/*
+=========================================================
+ Gemma WebGPU V12
+=========================================================
+
+ Runtime:
+   gemma-webgpu
+
+ 不使用：
+   MediaPipe
+   LiteRT
+   @mediapipe/tasks-genai
+   .task
+   IndexedDB
+   Cache API
+   Blob URL
+
+ Gemma:
+   Gemma 3 1B Q8_0
+
+ WebGPU:
+   Safari / iOS 18+
+
+=========================================================
+*/
+
+
+const MODEL = "1b";
+
+/*
+ * 先把 context 壓在 2048。
+ *
+ * 對 iPhone：
+ * 穩定性 > 超長上下文
+ */
+const CONTEXT_LENGTH = 2048;
+
+
+/*
+ * 單次最大生成量。
+ *
+ * 可以之後改成 384 / 512。
+ * 第一版先保守。
+ */
+const MAX_TOKENS = 256;
+
+
+/*
+ * Sampling
+ */
+const TEMPERATURE = 0.7;
+const TOP_P = 0.9;
+const REP_PENALTY = 1.2;
+
+
+/*
+=========================================================
+ DOM
+=========================================================
+*/
+
+const statusBar =
+  document.getElementById("statusBar");
+
+const chat =
+  document.getElementById("chat");
+
+const chatInner =
+  document.getElementById("chatInner");
+
+const welcome =
+  document.getElementById("welcome");
+
+const input =
+  document.getElementById("input");
+
+const sendBtn =
+  document.getElementById("sendBtn");
+
+const clearBtn =
+  document.getElementById("clearBtn");
+
+const debugBtn =
+  document.getElementById("debugBtn");
+
+const debugPanel =
+  document.getElementById("debugPanel");
+
+const overlay =
+  document.getElementById("overlay");
+
+const loadingText =
+  document.getElementById("loadingText");
+
+const progressInner =
+  document.getElementById("progressInner");
+
+const progressText =
+  document.getElementById("progressText");
+
+const stopBtn =
+  document.getElementById("stopBtn");
+
+
+/*
+=========================================================
+ STATE
+=========================================================
+*/
 
 let engine = null;
 
-function log(text) {
-  statusEl.textContent += "\\n" + text;
-}
+let generating = false;
 
-function setStatus(text) {
-  statusEl.textContent = text;
-}
+let abortController = null;
 
-async function checkGPU() {
+let messageCount = 0;
 
-  setStatus("檢查 WebGPU…");
+let debugLines = [];
 
-  if (!navigator.gpu) {
-    throw new Error(
-      "這個 Safari 沒有 navigator.gpu，WebGPU 不可用。"
-    );
-  }
 
-  const adapter = await navigator.gpu.requestAdapter();
+/*
+=========================================================
+ DEBUG
+=========================================================
+*/
 
-  if (!adapter) {
-    throw new Error(
-      "navigator.gpu 存在，但 requestAdapter() 失敗。"
-    );
-  }
+function debug(message) {
 
-  log("✓ WebGPU adapter");
+  const time =
+    new Date().toLocaleTimeString();
 
-  const device = await adapter.requestDevice();
-
-  if (!device) {
-    throw new Error(
-      "requestDevice() 失敗。"
-    );
-  }
-
-  log("✓ WebGPU device");
-
-  log(
-    "maxBufferSize = " +
-    Number(device.limits.maxBufferSize) / 1024 / 1024 +
-    " MB"
+  debugLines.push(
+    `[${time}] ${message}`
   );
 
-  log(
+  if (debugLines.length > 200) {
+    debugLines.shift();
+  }
+
+  debugPanel.textContent =
+    debugLines.join("\n");
+}
+
+
+window.addEventListener(
+  "error",
+  event => {
+
+    debug(
+      "JS ERROR: " +
+      (event.error?.stack ||
+       event.message)
+    );
+
+  }
+);
+
+
+window.addEventListener(
+  "unhandledrejection",
+  event => {
+
+    debug(
+      "PROMISE ERROR: " +
+      (
+        event.reason?.stack ||
+        event.reason?.message ||
+        String(event.reason)
+      )
+    );
+
+  }
+);
+
+
+/*
+=========================================================
+ STATUS
+=========================================================
+*/
+
+function setStatus(
+  text,
+  type = ""
+) {
+
+  statusBar.textContent = text;
+
+  statusBar.className =
+    "statusBar " + type;
+}
+
+
+/*
+=========================================================
+ GPU CHECK
+=========================================================
+*/
+
+async function checkWebGPU() {
+
+  debug("Checking WebGPU...");
+
+  if (!navigator.gpu) {
+
+    throw new Error(
+      "此 Safari 沒有 navigator.gpu，WebGPU 不可用。"
+    );
+
+  }
+
+  const adapter =
+    await navigator.gpu.requestAdapter();
+
+  if (!adapter) {
+
+    throw new Error(
+      "WebGPU adapter 無法取得。"
+    );
+
+  }
+
+  debug("WebGPU adapter ✓");
+
+  const device =
+    await adapter.requestDevice();
+
+  if (!device) {
+
+    throw new Error(
+      "WebGPU device 無法建立。"
+    );
+
+  }
+
+  debug("WebGPU device ✓");
+
+  debug(
+    "maxBufferSize = " +
+    formatBytes(
+      Number(device.limits.maxBufferSize)
+    )
+  );
+
+  debug(
     "maxStorageBufferBindingSize = " +
-    Number(device.limits.maxStorageBufferBindingSize) / 1024 / 1024 +
-    " MB"
+    formatBytes(
+      Number(
+        device.limits.maxStorageBufferBindingSize
+      )
+    )
   );
 
   device.destroy();
 
-  log("✓ WebGPU 基本測試完成");
+  return true;
 }
 
+
+/*
+=========================================================
+ BYTE FORMAT
+=========================================================
+*/
+
+function formatBytes(bytes) {
+
+  if (!Number.isFinite(bytes)) {
+    return "?";
+  }
+
+  if (bytes < 1024) {
+    return bytes + " B";
+  }
+
+  if (bytes < 1024 * 1024) {
+    return (
+      (bytes / 1024).toFixed(1) +
+      " KB"
+    );
+  }
+
+  if (bytes < 1024 * 1024 * 1024) {
+    return (
+      (bytes / 1024 / 1024).toFixed(1) +
+      " MB"
+    );
+  }
+
+  return (
+    (bytes / 1024 / 1024 / 1024).toFixed(2) +
+    " GB"
+  );
+}
+
+
+/*
+=========================================================
+ LOADING PROGRESS
+=========================================================
+*/
+
+function updateProgress(p) {
+
+  if (!p) return;
+
+  let percent = 0;
+
+  if (
+    typeof p.loaded === "number" &&
+    typeof p.total === "number" &&
+    p.total > 0
+  ) {
+
+    percent =
+      Math.max(
+        0,
+        Math.min(
+          100,
+          p.loaded / p.total * 100
+        )
+      );
+
+  }
+
+  progressInner.style.width =
+    percent.toFixed(1) + "%";
+
+  progressText.textContent =
+    percent.toFixed(1) + "%";
+
+  if (p.status) {
+
+    loadingText.textContent =
+      p.status;
+
+    setStatus(
+      p.status
+    );
+
+  }
+
+  if (
+    typeof p.loaded === "number" &&
+    typeof p.total === "number"
+  ) {
+
+    loadingText.textContent =
+      (p.status || "正在載入模型…") +
+      "\n" +
+      formatBytes(p.loaded) +
+      " / " +
+      formatBytes(p.total);
+
+  }
+
+}
+
+
+/*
+=========================================================
+ LOAD GEMMA
+=========================================================
+*/
 
 async function loadGemma() {
 
-  loadBtn.disabled = true;
-
   try {
 
-    setStatus("開始初始化…");
+    overlay.classList.remove("hidden");
 
-    await checkGPU();
+    setStatus(
+      "正在檢查 WebGPU…"
+    );
 
-    log("");
-    log("載入 gemma-webgpu…");
+    await checkWebGPU();
+
+    debug("WebGPU check passed.");
+
+    loadingText.textContent =
+      "正在載入 Gemma WebGPU runtime…";
+
+    setStatus(
+      "正在載入 Gemma WebGPU runtime…"
+    );
+
 
     /*
-     * 使用官方 npm package 的 ESM CDN。
+     * 使用 npm package。
      *
-     * 這裡刻意不使用：
-     * - MediaPipe
-     * - LiteRT
-     * - WASM LLM runtime
-     * - Transformers.js
-     * - ONNX Runtime
+     * gemma-webgpu 本身是 ESM package。
+     *
+     * 不經 MediaPipe / LiteRT。
      */
-
     const {
       createGemmaEngine
     } = await import(
-      "https://esm.sh/gemma-webgpu"
+      "https://esm.sh/gemma-webgpu@0.1.0"
     );
 
-    log("✓ gemma-webgpu JS 載入完成");
 
-    log("");
-    log("開始載入 Gemma 3 1B…");
-    log("第一次需要下載約 1 GB，請保持 Safari 前景。");
+    debug(
+      "gemma-webgpu module loaded."
+    );
 
-    engine = await createGemmaEngine({
 
-      model: "1b",
+    loadingText.textContent =
+      "正在初始化 Gemma 3 1B…";
 
-      contextLength: 1024,
 
-      onProgress: (p) => {
+    const started =
+      performance.now();
 
-        if (!p) return;
 
-        let text = "";
+    engine =
+      await createGemmaEngine({
 
-        if (p.status) {
-          text += p.status;
-        }
+        model: MODEL,
 
-        if (
-          typeof p.loaded === "number" &&
-          typeof p.total === "number" &&
-          p.total > 0
-        ) {
+        contextLength:
+          CONTEXT_LENGTH,
 
-          const percent =
-            p.loaded / p.total * 100;
+        onProgress: updateProgress
 
-          text +=
-            "\\n" +
-            (percent).toFixed(1) +
-            "% (" +
-            (p.loaded / 1024 / 1024).toFixed(0) +
-            " / " +
-            (p.total / 1024 / 1024).toFixed(0) +
-            " MB)";
-        }
+      });
 
-        statusEl.textContent = text;
-      }
-    });
 
-    log("");
-    log("✓ Gemma 3 1B 初始化成功");
+    const elapsed =
+      (
+        performance.now() -
+        started
+      ) / 1000;
+
+
+    debug(
+      "Gemma initialized in " +
+      elapsed.toFixed(2) +
+      " sec."
+    );
+
 
     if (engine.config) {
-      log("");
-      log(
-        "Model config:\\n" +
-        JSON.stringify(engine.config, null, 2)
+
+      debug(
+        "Model config: " +
+        JSON.stringify(
+          engine.config
+        )
       );
+
     }
 
-    runBtn.disabled = false;
 
-  } catch (err) {
+    /*
+     * 隱藏 loading
+     */
+    overlay.classList.add("hidden");
 
-    console.error(err);
 
-    statusEl.textContent +=
-      "\\n\\n❌ 初始化失敗\\n" +
-      (err?.stack || err?.message || String(err));
+    /*
+     * 啟用 UI
+     */
+    input.disabled = false;
+    sendBtn.disabled = false;
+    clearBtn.disabled = false;
 
-    loadBtn.disabled = false;
+
+    setStatus(
+      "Gemma 3 1B 已就緒 · WebGPU",
+      "ready"
+    );
+
+
+    input.focus();
+
+
+    /*
+     * 第一個歡迎訊息
+     */
+    addAssistantMessage(
+      "Gemma 3 1B 已準備完成。\n\n可以開始聊天了。"
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    debug(
+      "Gemma initialization failed:\n" +
+      (
+        error?.stack ||
+        error?.message ||
+        String(error)
+      )
+    );
+
+
+    overlay.classList.add("hidden");
+
+
+    setStatus(
+      "Gemma 初始化失敗",
+      "error"
+    );
+
+
+    addAssistantMessage(
+      "❌ Gemma 初始化失敗\n\n" +
+      (
+        error?.message ||
+        String(error)
+      )
+    );
+
   }
+
 }
 
 
-async function generate() {
+/*
+=========================================================
+ ADD MESSAGE
+=========================================================
+*/
+
+function addUserMessage(text) {
+
+  removeWelcome();
+
+  const row =
+    document.createElement("div");
+
+  row.className =
+    "messageRow user";
+
+
+  const bubble =
+    document.createElement("div");
+
+  bubble.className =
+    "message user";
+
+  bubble.textContent =
+    text;
+
+
+  row.appendChild(bubble);
+
+  chatInner.appendChild(row);
+
+
+  scrollToBottom();
+
+  messageCount++;
+
+  return bubble;
+}
+
+
+function addAssistantMessage(text) {
+
+  removeWelcome();
+
+  const row =
+    document.createElement("div");
+
+  row.className =
+    "messageRow assistant";
+
+
+  const bubble =
+    document.createElement("div");
+
+  bubble.className =
+    "message assistant";
+
+  bubble.textContent =
+    text;
+
+
+  row.appendChild(bubble);
+
+  chatInner.appendChild(row);
+
+
+  scrollToBottom();
+
+  messageCount++;
+
+  return bubble;
+}
+
+
+/*
+=========================================================
+ TYPING MESSAGE
+=========================================================
+*/
+
+function createTypingMessage() {
+
+  removeWelcome();
+
+  const row =
+    document.createElement("div");
+
+  row.className =
+    "messageRow assistant";
+
+
+  const bubble =
+    document.createElement("div");
+
+  bubble.className =
+    "message assistant";
+
+
+  const typing =
+    document.createElement("div");
+
+  typing.className =
+    "typing";
+
+  typing.innerHTML =
+    "<span></span><span></span><span></span>";
+
+
+  bubble.appendChild(typing);
+
+  row.appendChild(bubble);
+
+  chatInner.appendChild(row);
+
+  scrollToBottom();
+
+  return {
+    row,
+    bubble
+  };
+
+}
+
+
+/*
+=========================================================
+ REMOVE WELCOME
+=========================================================
+*/
+
+function removeWelcome() {
+
+  if (welcome) {
+    welcome.remove();
+  }
+
+}
+
+
+/*
+=========================================================
+ SCROLL
+=========================================================
+*/
+
+function scrollToBottom() {
+
+  requestAnimationFrame(() => {
+
+    chat.scrollTop =
+      chat.scrollHeight;
+
+  });
+
+}
+
+
+/*
+=========================================================
+ SEND
+=========================================================
+*/
+
+async function sendMessage() {
 
   if (!engine) {
     return;
   }
 
-  const prompt = promptEl.value.trim();
-
-  if (!prompt) {
-    alert("請先輸入問題");
+  if (generating) {
     return;
   }
 
-  runBtn.disabled = true;
 
-  outputEl.textContent = "";
+  const text =
+    input.value.trim();
+
+
+  if (!text) {
+    return;
+  }
+
+
+  /*
+   * 清空輸入
+   */
+  input.value = "";
+
+  autoResizeTextarea();
+
+
+  /*
+   * 顯示 user message
+   */
+  addUserMessage(text);
+
+
+  /*
+   * 加入 Gemma conversation
+   */
+  engine.addUserMessage(text);
+
+
+  /*
+   * 建立 assistant bubble
+   */
+  const typing =
+    createTypingMessage();
+
+
+  /*
+   * 狀態
+   */
+  generating = true;
+
+  stopBtn.classList.add("visible");
+
+  sendBtn.disabled = true;
+
+  input.disabled = true;
+
+  clearBtn.disabled = true;
+
+
+  setStatus(
+    "Gemma 正在生成…"
+  );
+
+
+  /*
+   * AbortController
+   */
+  abortController =
+    new AbortController();
+
+
+  let output = "";
+
+  let tokenCount = 0;
+
+  const started =
+    performance.now();
+
 
   try {
 
-    engine.addUserMessage(prompt);
-
-    let result = "";
-
-    const start = performance.now();
-
+    /*
+     * AsyncGenerator
+     */
     for await (
-      const token of engine.generate({
-        temperature: 0.7,
-        topP: 0.9,
-        maxTokens: 128
+      const token of
+      engine.generate({
+
+        temperature:
+          TEMPERATURE,
+
+        topP:
+          TOP_P,
+
+        repPenalty:
+          REP_PENALTY,
+
+        maxTokens:
+          MAX_TOKENS,
+
+        signal:
+          abortController.signal
+
       })
     ) {
 
-      result += token;
+      output += token;
 
-      outputEl.textContent = result;
+      tokenCount++;
+
+
+      /*
+       * 第一個 token 出現後，
+       * 移除 typing 狀態
+       */
+      if (tokenCount === 1) {
+
+        typing.bubble.innerHTML = "";
+
+      }
+
+
+      typing.bubble.textContent =
+        output;
+
+
+      scrollToBottom();
+
+
+      /*
+       * 不要每 token 都強制 layout。
+       */
+      if (
+        tokenCount % 8 === 0
+      ) {
+
+        scrollToBottom();
+
+      }
+
     }
 
+
     const seconds =
-      (performance.now() - start) / 1000;
+      (
+        performance.now() -
+        started
+      ) / 1000;
 
-    outputEl.textContent +=
-      "\\n\\n---\\n" +
-      "生成時間：" +
+
+    const tps =
+      seconds > 0
+        ? tokenCount / seconds
+        : 0;
+
+
+    /*
+     * 生成完成
+     */
+    if (tokenCount === 0) {
+
+      typing.bubble.textContent =
+        output ||
+        "(沒有產生文字)";
+
+    }
+
+
+    const meta =
+      document.createElement("div");
+
+    meta.className =
+      "messageMeta";
+
+    meta.textContent =
+      tokenCount +
+      " tokens · " +
       seconds.toFixed(2) +
-      " 秒";
+      " 秒 · " +
+      tps.toFixed(1) +
+      " tok/s";
 
-  } catch (err) {
 
-    console.error(err);
+    typing.row.appendChild(meta);
 
-    outputEl.textContent =
-      "❌ 生成失敗\\n\\n" +
-      (err?.stack || err?.message || String(err));
+
+    setStatus(
+      "Gemma 已完成 · " +
+      tps.toFixed(1) +
+      " tok/s",
+      "ready"
+    );
+
+
+    debug(
+      "Generation: " +
+      tokenCount +
+      " tokens / " +
+      seconds.toFixed(2) +
+      " sec / " +
+      tps.toFixed(1) +
+      " tok/s"
+    );
+
+
+  } catch (error) {
+
+    /*
+     * 使用者按停止
+     */
+    if (
+      error?.name === "AbortError" ||
+      abortController?.signal.aborted
+    ) {
+
+      if (output) {
+
+        typing.bubble.textContent =
+          output;
+
+      } else {
+
+        typing.bubble.textContent =
+          "（已停止）";
+
+      }
+
+
+      const meta =
+        document.createElement("div");
+
+      meta.className =
+        "messageMeta";
+
+      meta.textContent =
+        "生成已停止";
+
+
+      typing.row.appendChild(meta);
+
+
+      setStatus(
+        "已停止生成"
+      );
+
+
+    } else {
+
+      console.error(error);
+
+      debug(
+        "Generation error:\n" +
+        (
+          error?.stack ||
+          error?.message ||
+          String(error)
+        )
+      );
+
+
+      typing.bubble.textContent =
+        "❌ 生成時發生錯誤\n\n" +
+        (
+          error?.message ||
+          String(error)
+        );
+
+
+      setStatus(
+        "生成失敗",
+        "error"
+      );
+
+    }
 
   } finally {
 
-    runBtn.disabled = false;
+    generating = false;
+
+    stopBtn.classList.remove("visible");
+
+    sendBtn.disabled = false;
+
+    input.disabled = false;
+
+    clearBtn.disabled = false;
+
+    abortController = null;
+
+    input.focus();
+
   }
+
 }
 
 
-loadBtn.addEventListener(
-  "click",
-  loadGemma
+/*
+=========================================================
+ STOP
+=========================================================
+*/
+
+function stopGeneration() {
+
+  if (!generating) {
+    return;
+  }
+
+  debug(
+    "Abort generation requested."
+  );
+
+  if (abortController) {
+
+    abortController.abort();
+
+  }
+
+}
+
+
+/*
+=========================================================
+ CLEAR CONVERSATION
+=========================================================
+*/
+
+function clearConversation() {
+
+  if (!engine) {
+    return;
+  }
+
+  if (generating) {
+    return;
+  }
+
+
+  engine.resetConversation();
+
+
+  /*
+   * 清除 UI
+   */
+  chatInner.innerHTML = "";
+
+
+  const newWelcome =
+    document.createElement("div");
+
+  newWelcome.className =
+    "welcome";
+
+  newWelcome.innerHTML = `
+
+    <div class="logo">
+      G
+    </div>
+
+    <h1>
+      Gemma 3 1B
+    </h1>
+
+    <p>
+      對話已清除，可以開始新的聊天。
+    </p>
+
+  `;
+
+
+  chatInner.appendChild(
+    newWelcome
+  );
+
+
+  setStatus(
+    "新對話 · Gemma 3 1B 已就緒",
+    "ready"
+  );
+
+
+  debug(
+    "Conversation reset."
+  );
+
+
+  input.focus();
+
+}
+
+
+/*
+=========================================================
+ TEXTAREA AUTO RESIZE
+=========================================================
+*/
+
+function autoResizeTextarea() {
+
+  input.style.height =
+    "auto";
+
+  input.style.height =
+    Math.min(
+      input.scrollHeight,
+      140
+    ) + "px";
+
+}
+
+
+/*
+=========================================================
+ ENTER KEY
+=========================================================
+*/
+
+input.addEventListener(
+  "input",
+  autoResizeTextarea
 );
 
-runBtn.addEventListener(
-  "click",
-  generate
+
+input.addEventListener(
+  "keydown",
+  event => {
+
+    /*
+     * iPhone / iPad 的 Enter 行為
+     * 不強制攔截。
+     *
+     * Desktop：
+     * Enter = send
+     * Shift+Enter = newline
+     */
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      window.innerWidth >= 700
+    ) {
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
+
+  }
 );
 
 
 /*
- * 頁面一開始只做 GPU 檢查。
- * 不自動載入 1GB 模型。
- */
+=========================================================
+ BUTTONS
+=========================================================
+*/
+
+sendBtn.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+stopBtn.addEventListener(
+  "click",
+  stopGeneration
+);
+
+
+clearBtn.addEventListener(
+  "click",
+  clearConversation
+);
+
+
+debugBtn.addEventListener(
+  "click",
+  () => {
+
+    debugPanel.classList.toggle(
+      "show"
+    );
+
+  }
+);
+
+
+/*
+=========================================================
+ PAGE VISIBILITY
+=========================================================
+*/
+
+document.addEventListener(
+  "visibilitychange",
+  () => {
+
+    if (
+      document.visibilityState ===
+      "hidden"
+    ) {
+
+      debug(
+        "Page became hidden."
+      );
+
+    } else {
+
+      debug(
+        "Page became visible."
+      );
+
+    }
+
+  }
+);
+
+
+/*
+=========================================================
+ BEFORE UNLOAD
+=========================================================
+*/
+
+window.addEventListener(
+  "beforeunload",
+  () => {
+
+    /*
+     * 只在離開頁面時釋放 engine。
+     */
+    try {
+
+      if (engine) {
+        engine.dispose();
+      }
+
+    } catch (_) {}
+
+  }
+);
+
+
+/*
+=========================================================
+ START
+=========================================================
+*/
 
 (async () => {
 
-  try {
+  debug(
+    "Gemma WebGPU V12 starting..."
+  );
 
-    await checkGPU();
+  debug(
+    "User agent: " +
+    navigator.userAgent
+  );
 
-    log("");
-    log(
-      "請按「載入 Gemma 3 1B」開始測試。"
-    );
+  debug(
+    "Screen: " +
+    window.innerWidth +
+    "x" +
+    window.innerHeight
+  );
 
-  } catch (err) {
+  debug(
+    "Device pixel ratio: " +
+    window.devicePixelRatio
+  );
 
-    statusEl.textContent =
-      "❌ WebGPU 檢查失敗\\n\\n" +
-      (err?.stack || err?.message || String(err));
-  }
+
+  /*
+   * 注意：
+   * 不要自動開始模型下載。
+   *
+   * 使用者已經確認這個 runtime
+   * 可以正常載入，因此這裡直接載入。
+   */
+  await loadGemma();
 
 })();
 
