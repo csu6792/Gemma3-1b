@@ -1,2188 +1,1499 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+  <meta name="theme-color" content="#0f172a">
+  <title>iPhone WebGPU LLM Chat V6</title>
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, viewport-fit=cover"
->
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1e293b;
+      --border: #334155;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --good: #4ade80;
+      --bad: #fb7185;
+      --warn: #fbbf24;
+    }
 
-<meta name="theme-color" content="#0b1020">
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-<title>iPhone Lite LLM V5.1</title>
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "SF Pro Text",
+        "PingFang TC",
+        "Noto Sans TC",
+        sans-serif;
+    }
 
-<style>
+    .wrap {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      padding:
+        calc(14px + env(safe-area-inset-top))
+        14px
+        calc(24px + env(safe-area-inset-bottom));
+    }
 
-:root {
-  --bg: #0b1020;
-  --panel: #111827;
-  --border: #29354a;
-  --text: #eef2ff;
-  --muted: #9ca3af;
-  --blue: #60a5fa;
-  --green: #22c55e;
-  --yellow: #f59e0b;
-  --red: #ef4444;
-  --user: #2563eb;
-  --assistant: #1f2937;
-}
+    h1 {
+      font-size: 22px;
+      margin: 4px 0 4px;
+    }
 
-* {
-  box-sizing: border-box;
-}
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-}
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
 
-body {
-  overflow: hidden;
-}
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+    select,
+    button,
+    textarea,
+    input {
+      font: inherit;
+    }
 
-button {
-  border: 0;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-weight: 700;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
+    select,
+    button {
+      min-height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
 
-button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-}
+    select {
+      flex: 1;
+      min-width: 220px;
+      background: var(--panel2);
+      color: var(--text);
+      padding: 0 10px;
+    }
 
-.primary {
-  background: var(--blue);
-  color: #07111f;
-}
+    button {
+      background: var(--panel2);
+      color: var(--text);
+      padding: 8px 14px;
+      cursor: pointer;
+    }
 
-.secondary {
-  background: #263247;
-  color: var(--text);
-}
+    button:active {
+      transform: translateY(1px);
+    }
 
-.danger {
-  background: var(--red);
-  color: white;
-}
+    button.primary {
+      background: #075985;
+      border-color: #0ea5e9;
+    }
 
-input,
-select,
-textarea {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--text);
-  outline: none;
-}
+    button.good {
+      background: #14532d;
+      border-color: #22c55e;
+    }
 
-input,
-select {
-  padding: 10px;
-}
+    button.warn {
+      background: #713f12;
+      border-color: #f59e0b;
+    }
 
-textarea {
-  padding: 11px;
-  min-height: 48px;
-  max-height: 140px;
-  resize: none;
-  line-height: 1.45;
-}
+    button.danger {
+      background: #7f1d1d;
+      border-color: #ef4444;
+    }
 
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--blue);
-}
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
 
-.app {
-  width: 100%;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #020617;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
-header {
-  flex: 0 0 auto;
+    .status.good {
+      border-color: #166534;
+    }
 
-  padding:
-    calc(env(safe-area-inset-top) + 12px)
-    14px
-    12px;
+    .status.bad {
+      border-color: #991b1b;
+    }
 
-  border-bottom: 1px solid var(--border);
-  background: rgba(11,16,32,.97);
-}
+    .status.warn {
+      border-color: #92400e;
+    }
 
-.title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
 
-.title {
-  font-size: 17px;
-  font-weight: 800;
-}
+    progress {
+      width: 100%;
+      height: 10px;
+      margin-top: 10px;
+    }
 
-.badge {
-  font-size: 10px;
-  color: var(--muted);
-  background: #172033;
-  padding: 4px 8px;
-  border-radius: 999px;
-}
+    .chat {
+      min-height: 280px;
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 4px;
+    }
 
-.controls {
-  margin-top: 10px;
-  display: grid;
-  gap: 8px;
-}
+    .msg {
+      margin: 9px 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+    }
 
-.row {
-  display: flex;
-  gap: 8px;
-}
+    .user {
+      background: #075985;
+      margin-left: 12%;
+    }
 
-.row > * {
-  flex: 1;
-}
+    .assistant {
+      background: #1e293b;
+      margin-right: 8%;
+    }
 
-.status {
-  margin-top: 9px;
-  min-height: 18px;
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.5;
-}
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      resize: vertical;
+      background: #020617;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      outline: none;
+    }
 
-.status.success {
-  color: var(--green);
-}
+    textarea:focus,
+    select:focus,
+    button:focus {
+      border-color: var(--accent);
+    }
 
-.status.warning {
-  color: var(--yellow);
-}
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
 
-.status.error {
-  color: #fca5a5;
-}
+    .metric {
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px;
+      font-size: 12px;
+    }
 
-.progress-wrap {
-  display: none;
-  margin-top: 8px;
-}
+    .metric b {
+      display: block;
+      font-size: 14px;
+      margin-top: 2px;
+    }
 
-.progress-wrap.show {
-  display: block;
-}
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
 
-progress {
-  width: 100%;
-  height: 7px;
-}
+      .user {
+        margin-left: 4%;
+      }
 
-.progress-text {
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--muted);
-}
+      .assistant {
+        margin-right: 4%;
+      }
 
-.diagnostic {
-  margin-top: 9px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #0e1525;
-  font-size: 11px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.diagnostic.good {
-  border-color: #1c5934;
-}
-
-.diagnostic.warn {
-  border-color: #654b15;
-}
-
-.diagnostic.bad {
-  border-color: #693030;
-}
-
-.hidden {
-  display: none !important;
-}
-
-.chat {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 14px;
-}
-
-.message {
-  display: flex;
-  margin-bottom: 12px;
-}
-
-.message.user {
-  justify-content: flex-end;
-}
-
-.message.system {
-  justify-content: center;
-}
-
-.bubble {
-  max-width: 88%;
-  padding: 10px 12px;
-  border-radius: 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.55;
-  font-size: 15px;
-}
-
-.message.user .bubble {
-  background: var(--user);
-  color: white;
-  border-bottom-right-radius: 5px;
-}
-
-.message.assistant .bubble {
-  background: var(--assistant);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 5px;
-}
-
-.message.system .bubble {
-  max-width: 95%;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: center;
-}
-
-.composer {
-  flex: 0 0 auto;
-
-  padding:
-    10px
-    12px
-    calc(env(safe-area-inset-bottom) + 10px);
-
-  background: rgba(11,16,32,.98);
-  border-top: 1px solid var(--border);
-}
-
-.composer-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.composer-row button:first-child {
-  flex: 1;
-}
-
-.small {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-</style>
+      button {
+        flex: 1;
+      }
+    }
+  </style>
 </head>
 
 <body>
+<div class="wrap">
 
-<div class="app">
-
-<header>
-
-  <div class="title-row">
-
-    <div class="title">
-      📱 iPhone Lite LLM V5.1
-    </div>
-
-    <div class="badge">
-      Qwen + Gemma
-    </div>
-
+  <h1>📱 WebGPU LLM Chat V6</h1>
+  <div class="subtitle">
+    iPhone Safari / OPFS Stream / MediaPipe Tasks GenAI 0.10.29
   </div>
 
-
-  <div class="controls">
-
-    <select id="modelSelect">
-
-      <option value="qwen">
-        Qwen 2.5 0.5B
-      </option>
-
-      <option value="gemma">
-        Gemma 3 1B
-      </option>
-
-    </select>
-
-
-    <input
-      id="hfToken"
-      class="hidden"
-      type="password"
-      autocomplete="off"
-      placeholder="Gemma Hugging Face Token（需要時填）"
-    >
-
-
+  <!-- MODEL -->
+  <section class="card">
     <div class="row">
-
-      <button
-        id="downloadBtn"
-        class="primary"
-      >
-        下載模型
-      </button>
-
-      <button
-        id="diagnoseBtn"
-        class="secondary"
-      >
-        GPU 診斷
-      </button>
-
-      <button
-        id="initBtn"
-        class="secondary"
-        disabled
-      >
-        初始化
-      </button>
-
+      <select id="modelSelect">
+        <option value="qwen">
+          Qwen 0.5B — q8 — 約 547 MB
+        </option>
+        <option value="gemma">
+          Gemma 3 1B — int4 web — 約 700 MB
+        </option>
+      </select>
     </div>
 
-  </div>
+    <div class="row" style="margin-top:8px">
+      <button id="gpuBtn" class="primary">
+        🔍 GPU 診斷
+      </button>
 
+      <button id="downloadBtn">
+        ⬇️ 下載模型
+      </button>
 
-  <div
-    id="status"
-    class="status"
-  >
-    正在啟動...
-  </div>
+      <button id="initBtn" class="good">
+        🚀 初始化
+      </button>
 
+      <button id="clearBtn" class="danger">
+        🗑 清除模型
+      </button>
+    </div>
 
-  <div
-    id="progressWrap"
-    class="progress-wrap"
-  >
+    <progress id="progress" value="0" max="100" hidden></progress>
 
-    <progress
-      id="progress"
-      value="0"
-      max="100"
-    ></progress>
+    <div id="modelStatus" class="status">
+      尚未開始。
+    </div>
+  </section>
 
-    <div
-      id="progressText"
-      class="progress-text"
-    ></div>
+  <!-- GPU -->
+  <section class="card">
+    <b>WebGPU 診斷</b>
 
-  </div>
+    <div id="gpuStatus" class="status">
+      尚未診斷。
+    </div>
 
+    <div id="gpuMetrics" class="grid" style="margin-top:8px"></div>
+  </section>
 
-  <div
-    id="diagnostic"
-    class="diagnostic hidden"
-  ></div>
+  <!-- INITIALIZATION -->
+  <section class="card">
+    <b>初始化狀態</b>
 
-</header>
+    <div id="initStatus" class="status">
+      尚未初始化。
+    </div>
 
+    <div class="small" style="margin-top:8px">
+      V6 不使用 Blob、Object URL、Cache API 或 IndexedDB。
+      初始化時直接從 OPFS File Stream 交給 MediaPipe。
+    </div>
+  </section>
 
-<main
-  id="chat"
-  class="chat"
-></main>
+  <!-- CHAT -->
+  <section class="card">
+    <b>聊天</b>
 
+    <div id="chat" class="chat">
+      <div class="small">
+        模型初始化成功後即可開始聊天。
+      </div>
+    </div>
 
-<div class="composer">
+    <textarea
+      id="prompt"
+      placeholder="輸入訊息，例如：你好，請用繁體中文介紹自己。"
+      style="margin-top:10px"
+    ></textarea>
 
-  <textarea
-    id="prompt"
-    placeholder="輸入訊息..."
-    autocomplete="off"
-    autocorrect="on"
-    autocapitalize="sentences"
-    spellcheck="true"
-  ></textarea>
+    <div class="row" style="margin-top:8px">
+      <button id="sendBtn" class="primary" disabled>
+        ➤ 發送
+      </button>
+    </div>
+  </section>
 
+  <!-- LOG -->
+  <section class="card">
+    <b>Debug Log</b>
 
-  <div class="composer-row">
+    <div id="log" class="status"></div>
 
-    <button
-      id="sendBtn"
-      class="primary"
-      disabled
-    >
-      送出
-    </button>
-
-    <button
-      id="stopBtn"
-      class="danger"
-      disabled
-    >
-      停止
-    </button>
-
-    <button
-      id="clearBtn"
-      class="secondary"
-    >
-      清除
-    </button>
-
-  </div>
+    <div class="small" style="margin-top:8px">
+      如果初始化時 Safari 整頁重新載入，請重新進入此頁。
+      V6 會偵測上一輪是否死在初始化階段。
+    </div>
+  </section>
 
 </div>
 
-</div>
+<script>
+(() => {
+  "use strict";
 
+  /*
+   * ============================================================
+   * V6
+   *
+   * 重要設計：
+   *
+   * 1. 不使用 Cache API
+   * 2. 不使用 IndexedDB
+   * 3. 不建立 Blob
+   * 4. 不建立 Object URL
+   * 5. 模型下載直接寫入 OPFS
+   * 6. 初始化直接：
+   *
+   *      OPFS File
+   *          ↓
+   *      file.stream()
+   *          ↓
+   *      ReadableStreamDefaultReader
+   *          ↓
+   *      LlmInference.createFromModelBuffer()
+   *
+   * 7. MediaPipe 使用 stable 0.10.29
+   * 8. MediaPipe 使用 dynamic import
+   *    避免 CDN import 失敗時整個 UI 沒有反應
+   */
 
-<script type="module">
+  const MP_VERSION = "0.10.29";
 
-/*
-============================================================
- V5.1
- IMPORTANT:
- @mediapipe/tasks-genai stable = 0.10.29
+  const WASM_URL =
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@" +
+    MP_VERSION +
+    "/wasm";
 
- 0.10.35 is NOT a published stable tasks-genai version.
-============================================================
-*/
+  const MP_MODULE_URL =
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@" +
+    MP_VERSION +
+    "/genai_bundle.mjs";
 
-import {
-  FilesetResolver,
-  LlmInference
-} from
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/+esm";
+  const MODELS = {
+    qwen: {
+      name: "Qwen 0.5B",
+      filename:
+        "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+      url:
+        "https://huggingface.co/litert-community/" +
+        "Qwen2.5-0.5B-Instruct/resolve/main/" +
+        "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+      approxMB: 547
+    },
 
+    gemma: {
+      name: "Gemma 3 1B",
+      filename:
+        "gemma3-1b-it-int4-web.task",
+      url:
+        "https://huggingface.co/litert-community/" +
+        "Gemma3-1B-IT/resolve/main/" +
+        "gemma3-1b-it-int4-web.task",
+      approxMB: 700
+    }
+  };
 
-/* =========================================================
-   MODELS
-   ========================================================= */
+  let FilesetResolver = null;
+  let LlmInference = null;
+  let mpLoaded = false;
 
-const MODELS = {
+  let llm = null;
+  let llmModelKey = null;
+  let initializing = false;
+  let downloading = false;
 
-  qwen: {
+  const $ = id => document.getElementById(id);
 
-    id: "qwen",
+  const modelSelect = $("modelSelect");
+  const gpuBtn = $("gpuBtn");
+  const downloadBtn = $("downloadBtn");
+  const initBtn = $("initBtn");
+  const clearBtn = $("clearBtn");
+  const sendBtn = $("sendBtn");
+  const prompt = $("prompt");
 
-    name: "Qwen 2.5 0.5B",
+  const modelStatus = $("modelStatus");
+  const gpuStatus = $("gpuStatus");
+  const gpuMetrics = $("gpuMetrics");
+  const initStatus = $("initStatus");
+  const chat = $("chat");
+  const logBox = $("log");
+  const progress = $("progress");
 
-    fileName:
-      "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
+  // ------------------------------------------------------------
+  // Logging
+  // ------------------------------------------------------------
 
-    url:
-      "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task",
-
-    maxTokens: 64,
-
-    topK: 20,
-
-    temperature: 0.7
-
-  },
-
-
-  gemma: {
-
-    id: "gemma",
-
-    name: "Gemma 3 1B",
-
-    fileName:
-      "Gemma3-1B-IT_multi-prefill-seq_q4_ekv2048.task",
-
-    url:
-      "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/Gemma3-1B-IT_multi-prefill-seq_q4_ekv2048.task",
-
-    maxTokens: 64,
-
-    topK: 20,
-
-    temperature: 0.7
-
+  function now() {
+    return new Date().toLocaleTimeString();
   }
 
-};
-
-
-/* =========================================================
-   DOM
-   ========================================================= */
-
-const modelSelect =
-  document.getElementById(
-    "modelSelect"
-  );
-
-const hfToken =
-  document.getElementById(
-    "hfToken"
-  );
-
-const downloadBtn =
-  document.getElementById(
-    "downloadBtn"
-  );
-
-const diagnoseBtn =
-  document.getElementById(
-    "diagnoseBtn"
-  );
-
-const initBtn =
-  document.getElementById(
-    "initBtn"
-  );
-
-const sendBtn =
-  document.getElementById(
-    "sendBtn"
-  );
-
-const stopBtn =
-  document.getElementById(
-    "stopBtn"
-  );
-
-const clearBtn =
-  document.getElementById(
-    "clearBtn"
-  );
-
-const promptInput =
-  document.getElementById(
-    "prompt"
-  );
-
-const chat =
-  document.getElementById(
-    "chat"
-  );
-
-const statusEl =
-  document.getElementById(
-    "status"
-  );
-
-const progressWrap =
-  document.getElementById(
-    "progressWrap"
-  );
-
-const progress =
-  document.getElementById(
-    "progress"
-  );
-
-const progressText =
-  document.getElementById(
-    "progressText"
-  );
-
-const diagnostic =
-  document.getElementById(
-    "diagnostic"
-  );
-
-
-/* =========================================================
-   STATE
-   ========================================================= */
-
-let currentModelId =
-  "qwen";
-
-let llm =
-  null;
-
-let fileset =
-  null;
-
-let initializing =
-  false;
-
-let generating =
-  false;
-
-
-/* =========================================================
-   ERROR HANDLER
-   ========================================================= */
-
-window.addEventListener(
-  "error",
-  event => {
-
-    console.error(
-      "Global error:",
-      event.error || event.message
-    );
-
-    setStatus(
-      "JavaScript 錯誤，請看診斷區。",
-      "error"
-    );
-
-    showDiagnostic(
-      "❌ JavaScript Error\n\n" +
-      (
-        event.error?.stack ||
-        event.message ||
-        "Unknown error"
-      ),
-      "bad"
-    );
-
-  }
-);
-
-
-window.addEventListener(
-  "unhandledrejection",
-  event => {
-
-    console.error(
-      "Unhandled rejection:",
-      event.reason
-    );
-
-    setStatus(
-      "JavaScript Promise 錯誤。",
-      "error"
-    );
-
-    showDiagnostic(
-      "❌ Unhandled Promise Rejection\n\n" +
-      String(event.reason),
-      "bad"
-    );
-
-  }
-);
-
-
-/* =========================================================
-   UI
-   ========================================================= */
-
-function setStatus(
-  text,
-  type = ""
-) {
-
-  statusEl.textContent =
-    text;
-
-  statusEl.className =
-    "status" +
-    (
-      type
-        ? ` ${type}`
-        : ""
-    );
-
-}
-
-
-function showDiagnostic(
-  text,
-  type = ""
-) {
-
-  diagnostic.classList.remove(
-    "hidden"
-  );
-
-  diagnostic.className =
-    "diagnostic" +
-    (
-      type
-        ? ` ${type}`
-        : ""
-    );
-
-  diagnostic.textContent =
-    text;
-
-}
-
-
-function addMessage(
-  role,
-  text
-) {
-
-  const row =
-    document.createElement(
-      "div"
-    );
-
-  row.className =
-    `message ${role}`;
-
-  const bubble =
-    document.createElement(
-      "div"
-    );
-
-  bubble.className =
-    "bubble";
-
-  bubble.textContent =
-    text;
-
-  row.appendChild(
-    bubble
-  );
-
-  chat.appendChild(
-    row
-  );
-
-  chat.scrollTop =
-    chat.scrollHeight;
-
-  return bubble;
-
-}
-
-
-function formatBytes(
-  bytes
-) {
-
-  if (
-    !Number.isFinite(bytes)
-  ) {
-    return "0 B";
-  }
-
-  const units = [
-    "B",
-    "KB",
-    "MB",
-    "GB"
-  ];
-
-  let value =
-    bytes;
-
-  let index =
-    0;
-
-  while (
-    value >= 1024 &&
-    index <
-      units.length - 1
-  ) {
-
-    value /= 1024;
-
-    index++;
-
-  }
-
-  return (
-    value.toFixed(
-      index === 0
-        ? 0
-        : 1
-    )
-    +
-    " "
-    +
-    units[index]
-  );
-
-}
-
-
-/* =========================================================
-   OPFS
-   ========================================================= */
-
-async function getRoot() {
-
-  if (
-    !navigator.storage ||
-    !navigator.storage.getDirectory
-  ) {
-
-    throw new Error(
-      "此瀏覽器不支援 OPFS。"
-    );
-
-  }
-
-  return (
-    await navigator.storage.getDirectory()
-  );
-
-}
-
-
-async function getHandle(
-  model
-) {
-
-  const root =
-    await getRoot();
-
-  return (
-    await root.getFileHandle(
-      model.fileName,
-      {
-        create: false
-      }
-    )
-  );
-
-}
-
-
-async function modelExists(
-  model
-) {
-
-  try {
-
-    await getHandle(model);
-
-    return true;
-
-  } catch (_) {
-
-    return false;
-
-  }
-
-}
-
-
-async function modelSize(
-  model
-) {
-
-  try {
-
-    const handle =
-      await getHandle(model);
-
-    const file =
-      await handle.getFile();
-
-    return file.size;
-
-  } catch (_) {
-
-    return 0;
-
-  }
-
-}
-
-
-/* =========================================================
-   DOWNLOAD
-   ========================================================= */
-
-async function downloadModel(
-  model
-) {
-
-  const root =
-    await getRoot();
-
-
-  const handle =
-    await root.getFileHandle(
-      model.fileName,
-      {
-        create: true
-      }
-    );
-
-
-  const writable =
-    await handle.createWritable();
-
-
-  try {
-
-    const headers = {};
-
-    const token =
-      hfToken.value.trim();
-
-
-    if (
-      model.id === "gemma" &&
-      token
-    ) {
-
-      headers.Authorization =
-        `Bearer ${token}`;
-
+  function log(message) {
+    const line = `[${now()}] ${message}`;
+    console.log(line);
+
+    if (logBox.textContent.length > 12000) {
+      logBox.textContent = "";
     }
 
+    logBox.textContent +=
+      (logBox.textContent ? "\n" : "") +
+      line;
+  }
 
-    setStatus(
-      `連線到 Hugging Face...`
+  function setStatus(el, text, type = "") {
+    el.textContent = text;
+    el.className = "status" + (type ? " " + type : "");
+  }
+
+  function getModel() {
+    return MODELS[modelSelect.value];
+  }
+
+  function opfsSupported() {
+    return !!(
+      navigator.storage &&
+      navigator.storage.getDirectory
     );
+  }
 
+  // ------------------------------------------------------------
+  // Crash/reload detection
+  // ------------------------------------------------------------
 
-    const response =
-      await fetch(
-        model.url,
-        {
-          method: "GET",
-          headers,
-          cache: "no-store",
-          redirect: "follow"
-        }
-      );
+  const CRASH_KEY = "llm-v6-initializing";
 
-
-    if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-
-    }
-
-
-    if (!response.body) {
-
-      throw new Error(
-        "response.body 不存在。Safari 沒有提供下載串流。"
-      );
-
-    }
-
-
-    const total =
-      Number(
-        response.headers.get(
-          "content-length"
-        )
-      ) || 0;
-
-
-    const reader =
-      response.body.getReader();
-
-
-    let received =
-      0;
-
-
-    while (true) {
-
-      const {
-        value,
-        done
-      } =
-        await reader.read();
-
-
-      if (done) {
-        break;
-      }
-
-
-      if (!value) {
-        continue;
-      }
-
-
-      await writable.write(
-        value
-      );
-
-
-      received +=
-        value.byteLength;
-
-
-      if (total > 0) {
-
-        const pct =
-          (
-            received /
-            total
-          ) * 100;
-
-
-        progress.value =
-          Math.min(
-            100,
-            pct
-          );
-
-
-        progressText.textContent =
-          `${formatBytes(received)} / ${formatBytes(total)}`;
-
-
-      } else {
-
-        progressText.textContent =
-          `已下載 ${formatBytes(received)}`;
-
-      }
-
-    }
-
-
-    await writable.close();
-
-
-    return received;
-
-
-  } catch (error) {
-
+  function markInitStart(modelKey) {
     try {
-      await writable.abort();
-    } catch (_) {}
-
-
-    try {
-      await root.removeEntry(
-        model.fileName
+      localStorage.setItem(
+        CRASH_KEY,
+        JSON.stringify({
+          model: modelKey,
+          time: Date.now()
+        })
       );
     } catch (_) {}
-
-
-    throw error;
-
   }
 
-}
-
-
-/* =========================================================
-   DOWNLOAD BUTTON
-   ========================================================= */
-
-downloadBtn.addEventListener(
-  "click",
-  async () => {
-
-    const model =
-      MODELS[currentModelId];
-
-
-    downloadBtn.disabled =
-      true;
-
-    diagnoseBtn.disabled =
-      true;
-
-    initBtn.disabled =
-      true;
-
-
-    progressWrap.classList.add(
-      "show"
-    );
-
-    progress.value =
-      0;
-
-    progressText.textContent =
-      "準備下載...";
-
-
+  function clearInitMark() {
     try {
+      localStorage.removeItem(CRASH_KEY);
+    } catch (_) {}
+  }
 
-      setStatus(
-        `正在下載 ${model.name}...`
-      );
+  function checkPreviousCrash() {
+    try {
+      const raw = localStorage.getItem(CRASH_KEY);
 
+      if (!raw) return;
 
-      const bytes =
-        await downloadModel(
-          model
+      const data = JSON.parse(raw);
+
+      const age = Date.now() - Number(data.time || 0);
+
+      // 10 minutes內才視為上一輪初始化異常
+      if (age < 10 * 60 * 1000) {
+        setStatus(
+          initStatus,
+          "⚠️ 偵測到上一輪頁面可能在 LLM 初始化期間被 Safari 終止。\n" +
+          "模型：" +
+          (MODELS[data.model]?.name || data.model) +
+          "\n" +
+          "這不是正常的 JavaScript error；如果 Safari 整頁重載，通常代表 WebKit page process 在 WASM/GPU 初始化階段被終止。",
+          "warn"
         );
 
+        log(
+          "偵測到上一輪初始化沒有正常結束：" +
+          (data.model || "unknown")
+        );
+      }
+    } catch (_) {}
+  }
 
-      progress.value =
-        100;
+  // ------------------------------------------------------------
+  // OPFS
+  // ------------------------------------------------------------
 
+  async function getOPFSRoot() {
+    if (!opfsSupported()) {
+      throw new Error(
+        "此 Safari 不支援 OPFS。"
+      );
+    }
 
-      progressText.textContent =
-        `${formatBytes(bytes)} 完成`;
+    return await navigator.storage.getDirectory();
+  }
 
+  async function getModelHandle(modelKey, create = false) {
+    const model = MODELS[modelKey];
+    const root = await getOPFSRoot();
+
+    return await root.getFileHandle(
+      model.filename,
+      { create }
+    );
+  }
+
+  async function modelExists(modelKey) {
+    try {
+      await getModelHandle(modelKey, false);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function deleteModel(modelKey) {
+    const model = MODELS[modelKey];
+    const root = await getOPFSRoot();
+
+    try {
+      await root.removeEntry(model.filename);
+      log("已刪除：" + model.name);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function getModelFile(modelKey) {
+    const handle = await getModelHandle(modelKey, false);
+    return await handle.getFile();
+  }
+
+  // ------------------------------------------------------------
+  // Download
+  // ------------------------------------------------------------
+
+  async function downloadModel() {
+    if (downloading) return;
+
+    const key = modelSelect.value;
+    const model = MODELS[key];
+
+    if (!opfsSupported()) {
+      setStatus(
+        modelStatus,
+        "❌ 此裝置不支援 OPFS，無法使用 V6。",
+        "bad"
+      );
+      return;
+    }
+
+    downloading = true;
+    downloadBtn.disabled = true;
+    initBtn.disabled = true;
+    clearBtn.disabled = true;
+
+    progress.hidden = false;
+    progress.value = 0;
+
+    setStatus(
+      modelStatus,
+      `開始下載 ${model.name}\n` +
+      `檔案：約 ${model.approxMB} MB\n` +
+      `直接串流寫入 OPFS，不建立 Blob。`
+    );
+
+    log("開始下載：" + model.name);
+    log("URL：" + model.url);
+
+    try {
+      const response = await fetch(model.url, {
+        method: "GET",
+        cache: "no-store",
+        redirect: "follow"
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          "HTTP " +
+          response.status +
+          " " +
+          response.statusText
+        );
+      }
+
+      if (!response.body) {
+        throw new Error(
+          "瀏覽器沒有提供 ReadableStream。"
+        );
+      }
+
+      const total = Number(
+        response.headers.get("content-length") || 0
+      );
+
+      if (total > 0) {
+        log(
+          "Content-Length：" +
+          Math.round(total / 1024 / 1024) +
+          " MB"
+        );
+      } else {
+        log("沒有 Content-Length，使用不定長度下載。");
+      }
+
+      const root = await getOPFSRoot();
+
+      // 先刪掉舊檔案，避免舊檔案與新檔案同時佔空間。
+      try {
+        await root.removeEntry(model.filename);
+      } catch (_) {}
+
+      const handle = await root.getFileHandle(
+        model.filename,
+        { create: true }
+      );
+
+      const writable = await handle.createWritable();
+
+      const reader = response.body.getReader();
+
+      let received = 0;
+      let lastShown = -1;
+
+      try {
+        while (true) {
+          const result = await reader.read();
+
+          if (result.done) break;
+
+          const chunk = result.value;
+
+          if (chunk) {
+            await writable.write(chunk);
+            received += chunk.byteLength;
+          }
+
+          let percent = 0;
+
+          if (total > 0) {
+            percent = Math.min(
+              100,
+              received / total * 100
+            );
+          }
+
+          const rounded = Math.floor(percent);
+
+          if (rounded !== lastShown) {
+            lastShown = rounded;
+            progress.value = rounded;
+
+            const mb =
+              received / 1024 / 1024;
+
+            if (total > 0) {
+              setStatus(
+                modelStatus,
+                `下載中：${model.name}\n` +
+                `${mb.toFixed(1)} MB / ` +
+                `${(total / 1024 / 1024).toFixed(1)} MB\n` +
+                `${rounded}%`
+              );
+            } else {
+              setStatus(
+                modelStatus,
+                `下載中：${model.name}\n` +
+                `${mb.toFixed(1)} MB`
+              );
+            }
+          }
+        }
+
+        await writable.close();
+
+      } catch (e) {
+        try {
+          await writable.abort();
+        } catch (_) {}
+
+        throw e;
+      }
+
+      const file = await handle.getFile();
+
+      log(
+        "下載完成：" +
+        (file.size / 1024 / 1024).toFixed(1) +
+        " MB"
+      );
 
       setStatus(
-        `${model.name} 下載完成。`,
-        "success"
+        modelStatus,
+        `✓ ${model.name} 已下載完成\n` +
+        `檔案大小：` +
+        `${(file.size / 1024 / 1024).toFixed(1)} MB\n` +
+        `儲存位置：OPFS`,
+        "good"
       );
 
+      progress.value = 100;
 
-      addMessage(
-        "system",
-        `✓ ${model.name} 下載完成。\n` +
-        `檔案大小：${formatBytes(bytes)}`
-      );
-
-
-      initBtn.disabled =
-        false;
-
-
-    } catch (error) {
-
-      console.error(
-        "Download failed:",
-        error
-      );
-
+    } catch (e) {
+      console.error(e);
 
       setStatus(
-        `下載失敗：${error?.message || error}`,
-        "error"
-      );
-
-
-      showDiagnostic(
-        "❌ Download Error\n\n" +
-        (
-          error?.stack ||
-          error?.message ||
-          String(error)
-        ),
+        modelStatus,
+        "❌ 下載失敗\n" +
+        (e?.message || String(e)),
         "bad"
       );
 
+      log(
+        "下載錯誤：" +
+        (e?.stack || e?.message || String(e))
+      );
 
     } finally {
+      downloading = false;
+      downloadBtn.disabled = false;
+      initBtn.disabled = false;
+      clearBtn.disabled = false;
+    }
+  }
 
-      downloadBtn.disabled =
-        false;
+  // ------------------------------------------------------------
+  // MediaPipe dynamic import
+  // ------------------------------------------------------------
 
-      diagnoseBtn.disabled =
-        false;
-
-
-      setTimeout(
-        () => {
-
-          progressWrap.classList.remove(
-            "show"
-          );
-
-        },
-        1200
-      );
-
+  async function loadMediaPipe() {
+    if (mpLoaded) {
+      return;
     }
 
-  }
-);
+    log(
+      "載入 MediaPipe Tasks GenAI " +
+      MP_VERSION
+    );
 
-
-/* =========================================================
-   GPU DIAGNOSTIC
-   ========================================================= */
-
-diagnoseBtn.addEventListener(
-  "click",
-  async () => {
-
-    diagnoseBtn.disabled =
-      true;
-
+    setStatus(
+      initStatus,
+      "正在載入 MediaPipe Tasks GenAI..."
+    );
 
     try {
+      const mod = await import(MP_MODULE_URL);
 
-      showDiagnostic(
-        "正在檢查 WebGPU...",
-        ""
+      FilesetResolver = mod.FilesetResolver;
+      LlmInference = mod.LlmInference;
+
+      if (!FilesetResolver || !LlmInference) {
+        throw new Error(
+          "MediaPipe module 載入成功，但找不到 " +
+          "FilesetResolver / LlmInference。"
+        );
+      }
+
+      mpLoaded = true;
+
+      log("MediaPipe module ✓");
+
+    } catch (e) {
+      log(
+        "MediaPipe import 失敗：" +
+        (e?.stack || e?.message || String(e))
       );
 
+      throw e;
+    }
+  }
+
+  // ------------------------------------------------------------
+  // GPU diagnostics
+  // ------------------------------------------------------------
+
+  async function gpuDiagnostic() {
+    gpuBtn.disabled = true;
+
+    try {
+      if (!navigator.gpu) {
+        setStatus(
+          gpuStatus,
+          "❌ navigator.gpu 不存在。\n" +
+          "此瀏覽器沒有可用 WebGPU。",
+          "bad"
+        );
+
+        return;
+      }
 
       setStatus(
-        "正在檢查 WebGPU..."
+        gpuStatus,
+        "正在取得 WebGPU adapter..."
       );
 
-
-      if (
-        !navigator.gpu
-      ) {
-
-        showDiagnostic(
-          "❌ WebGPU 不存在\n\n" +
-          "navigator.gpu = undefined\n\n" +
-          "MediaPipe LLM 的 GPU backend 無法使用。",
-          "bad"
-        );
-
-
-        setStatus(
-          "此 Safari 沒有可用 WebGPU。",
-          "error"
-        );
-
-
-        initBtn.disabled =
-          true;
-
-
-        return;
-
-      }
-
-
       const adapter =
-        await navigator.gpu.requestAdapter({
-          powerPreference:
-            "low-power"
-        });
-
+        await navigator.gpu.requestAdapter();
 
       if (!adapter) {
-
-        showDiagnostic(
-          "❌ requestAdapter() 回傳 null\n\n" +
-          "Safari 找不到 WebGPU Adapter。",
+        setStatus(
+          gpuStatus,
+          "❌ 無法取得 WebGPU adapter。",
           "bad"
         );
 
-
-        setStatus(
-          "找不到 WebGPU Adapter。",
-          "error"
-        );
-
-
-        initBtn.disabled =
-          true;
-
-
         return;
-
       }
 
+      const limits = adapter.limits;
+      const features = [...adapter.features];
 
-      const limits =
-        adapter.limits;
+      // 不呼叫 requestAdapterInfo()
+      // Safari / WebKit 某些版本對此 API 不完整。
 
-
-      const maxStorage =
+      const storageLimit =
         Number(
-          limits.maxStorageBufferBindingSize
-        ) || 0;
-
+          limits.maxStorageBufferBindingSize || 0
+        );
 
       const maxBuffer =
         Number(
-          limits.maxBufferSize
-        ) || 0;
-
-
-      const features =
-        Array.from(
-          adapter.features || []
+          limits.maxBufferSize || 0
         );
 
+      const storageGB =
+        storageLimit / 1024 / 1024 / 1024;
 
-      let adapterInfo =
-        "無法取得 adapterInfo";
+      const maxBufferGB =
+        maxBuffer / 1024 / 1024 / 1024;
 
+      const deviceMemory =
+        navigator.deviceMemory || "未知";
+
+      const hardwareConcurrency =
+        navigator.hardwareConcurrency || "未知";
+
+      gpuMetrics.innerHTML = `
+        <div class="metric">
+          WebGPU
+          <b>✓ 可用</b>
+        </div>
+
+        <div class="metric">
+          Adapter
+          <b>✓ 已取得</b>
+        </div>
+
+        <div class="metric">
+          maxStorageBufferBindingSize
+          <b>${storageGB.toFixed(2)} GB</b>
+        </div>
+
+        <div class="metric">
+          maxBufferSize
+          <b>${maxBufferGB.toFixed(2)} GB</b>
+        </div>
+
+        <div class="metric">
+          deviceMemory
+          <b>${deviceMemory} GB</b>
+        </div>
+
+        <div class="metric">
+          CPU threads
+          <b>${hardwareConcurrency}</b>
+        </div>
+      `;
+
+      const featureText =
+        features.length
+          ? features.join(", ")
+          : "無額外 features";
+
+      setStatus(
+        gpuStatus,
+        "✓ WebGPU 基本檢查通過\n\n" +
+        "Adapter：已取得\n" +
+        "maxStorageBufferBindingSize：" +
+        storageGB.toFixed(2) +
+        " GB\n" +
+        "maxBufferSize：" +
+        maxBufferGB.toFixed(2) +
+        " GB\n" +
+        "Features：" +
+        featureText,
+        "good"
+      );
+
+      log(
+        "WebGPU 診斷完成：" +
+        storageGB.toFixed(2) +
+        " GB / " +
+        maxBufferGB.toFixed(2) +
+        " GB"
+      );
+
+    } catch (e) {
+      console.error(e);
+
+      setStatus(
+        gpuStatus,
+        "❌ WebGPU 診斷失敗\n" +
+        (e?.message || String(e)),
+        "bad"
+      );
+
+      log(
+        "GPU diagnostic error：" +
+        (e?.stack || e?.message || String(e))
+      );
+
+    } finally {
+      gpuBtn.disabled = false;
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Initialize model
+  // ------------------------------------------------------------
+
+  async function initializeModel() {
+    if (initializing) return;
+
+    const key = modelSelect.value;
+    const model = MODELS[key];
+
+    initializing = true;
+
+    initBtn.disabled = true;
+    downloadBtn.disabled = true;
+    clearBtn.disabled = true;
+    sendBtn.disabled = true;
+
+    markInitStart(key);
+
+    setStatus(
+      initStatus,
+      `準備初始化 ${model.name}...\n` +
+      `V6：OPFS File → ReadableStream → MediaPipe`
+    );
+
+    log("================================");
+    log("開始初始化：" + model.name);
+    log("V6 stream initialization");
+    log("================================");
+
+    try {
+      // --------------------------------------------------------
+      // 1. Check model
+      // --------------------------------------------------------
+
+      const exists =
+        await modelExists(key);
+
+      if (!exists) {
+        throw new Error(
+          `${model.name} 尚未下載。\n` +
+          `請先按「下載模型」。`
+        );
+      }
+
+      const file =
+        await getModelFile(key);
+
+      log(
+        "OPFS file：" +
+        (file.size / 1024 / 1024).toFixed(1) +
+        " MB"
+      );
+
+      // --------------------------------------------------------
+      // 2. Load MediaPipe
+      // --------------------------------------------------------
+
+      await loadMediaPipe();
+
+      // --------------------------------------------------------
+      // 3. WASM fileset
+      // --------------------------------------------------------
+
+      setStatus(
+        initStatus,
+        `✓ MediaPipe 已載入\n` +
+        `正在載入 GenAI WASM...\n` +
+        `模型：${model.name}`
+      );
+
+      log("載入 GenAI WASM");
+
+      const genai =
+        await FilesetResolver.forGenAiTasks(
+          WASM_URL
+        );
+
+      log("GenAI WASM fileset ✓");
+
+      // --------------------------------------------------------
+      // 4. Create stream
+      // --------------------------------------------------------
 
       /*
-       * requestAdapterInfo is not assumed to exist.
+       * 重要：
        *
-       * Some browsers removed/changed this API.
+       * 不做：
+       *
+       *   await file.arrayBuffer()
+       *   new Blob(...)
+       *   URL.createObjectURL(...)
+       *
+       * 直接取得 File stream。
        */
+
+      const stream =
+        file.stream();
+
+      const reader =
+        stream.getReader();
+
+      log(
+        "ReadableStreamDefaultReader ✓"
+      );
+
+      setStatus(
+        initStatus,
+        `正在初始化 ${model.name}\n\n` +
+        `模型：${(file.size / 1024 / 1024).toFixed(1)} MB\n` +
+        `輸入方式：ReadableStreamDefaultReader\n` +
+        `Delegate：GPU\n\n` +
+        `⚠️ 這個階段可能需要一些時間。\n` +
+        `請不要切換 Safari 分頁。`
+      );
+
+      // --------------------------------------------------------
+      // 5. Create LLM from stream
+      // --------------------------------------------------------
+
+      log(
+        "呼叫 LlmInference.createFromModelBuffer()"
+      );
+
+      const started =
+        performance.now();
+
+      /*
+       * MediaPipe Tasks 的 model-buffer API
+       * 接受 Uint8Array 或 ReadableStreamDefaultReader。
+       *
+       * 這裡刻意使用 reader，
+       * 避免把整個 500~700 MB 模型再複製到 JS heap。
+       */
+
+      llm =
+        await LlmInference.createFromModelBuffer(
+          genai,
+          reader
+        );
+
+      const elapsed =
+        (performance.now() - started) / 1000;
+
+      llmModelKey = key;
+
+      clearInitMark();
+
+      setStatus(
+        initStatus,
+        `✓ ${model.name} 初始化成功\n\n` +
+        `初始化時間：${elapsed.toFixed(1)} 秒\n` +
+        `Delegate：GPU\n\n` +
+        `現在可以開始聊天。`,
+        "good"
+      );
+
+      setStatus(
+        modelStatus,
+        `✓ ${model.name} 已準備完成\n` +
+        `OPFS：${(file.size / 1024 / 1024).toFixed(1)} MB`,
+        "good"
+      );
+
+      sendBtn.disabled = false;
+
+      log(
+        "LLM 初始化成功：" +
+        elapsed.toFixed(1) +
+        " 秒"
+      );
+
+    } catch (e) {
+      console.error(e);
+
+      /*
+       * 如果是正常 JS exception，
+       * 這裡會顯示錯誤。
+       *
+       * 如果 Safari WebKit page process 被殺掉，
+       * 則這裡不會執行；
+       * 下一次進頁面會由 CRASH_KEY 告知。
+       */
+
+      setStatus(
+        initStatus,
+        "❌ 初始化失敗\n\n" +
+        (e?.message || String(e)) +
+        "\n\n" +
+        "如果 Safari 整頁重載，而不是看到這段錯誤，" +
+        "代表問題發生在 WASM/GPU 原生層。",
+        "bad"
+      );
+
+      log(
+        "初始化 exception：" +
+        (e?.stack || e?.message || String(e))
+      );
+
       try {
-
-        if (
-          typeof adapter.requestAdapterInfo ===
-          "function"
-        ) {
-
-          const info =
-            await adapter.requestAdapterInfo();
-
-
-          adapterInfo =
-            [
-              info.vendor,
-              info.architecture,
-              info.device,
-              info.description
-            ]
-            .filter(Boolean)
-            .join(" / ");
-
+        if (typeof reader !== "undefined") {
+          await reader.cancel();
         }
-
       } catch (_) {}
 
+      clearInitMark();
 
-      const minSafe =
-        512 *
-        1024 *
-        1024;
+    } finally {
+      initializing = false;
+      initBtn.disabled = false;
+      downloadBtn.disabled = false;
+      clearBtn.disabled = false;
+    }
+  }
 
+  // ------------------------------------------------------------
+  // Chat
+  // ------------------------------------------------------------
 
-      const storageOK =
-        maxStorage >=
-        minSafe;
+  function addMessage(role, text) {
+    const div =
+      document.createElement("div");
 
+    div.className =
+      "msg " +
+      (role === "user"
+        ? "user"
+        : "assistant");
 
-      let text =
-        "📱 WebGPU 診斷\n\n";
+    div.textContent = text;
 
+    chat.appendChild(div);
 
-      text +=
-        "WebGPU：✓\n";
+    chat.scrollTop =
+      chat.scrollHeight;
 
+    return div;
+  }
 
-      text +=
-        `Adapter：${adapterInfo || "未知"}\n`;
+  async function sendMessage() {
+    if (!llm) {
+      setStatus(
+        initStatus,
+        "請先初始化模型。",
+        "warn"
+      );
+      return;
+    }
 
+    const text =
+      prompt.value.trim();
 
-      text +=
-        `maxStorageBufferBindingSize：${formatBytes(maxStorage)}\n`;
+    if (!text) return;
 
+    prompt.value = "";
 
-      text +=
-        `maxBufferSize：${formatBytes(maxBuffer)}\n`;
+    addMessage("user", text);
 
+    const answerDiv =
+      addMessage(
+        "assistant",
+        "⏳ 生成中..."
+      );
 
-      text +=
-        `Features：${
-          features.length
-            ? features.join(", ")
-            : "無"
-        }\n\n`;
+    sendBtn.disabled = true;
 
+    try {
+      log(
+        "generateResponse()"
+      );
 
-      if (storageOK) {
+      const response =
+        await llm.generateResponse(text);
 
-        text +=
-          "結果：✓ 通過基本安全檢查\n\n";
+      answerDiv.textContent =
+        response || "(模型沒有回覆)";
 
+      log("生成完成");
 
-        text +=
-          "現在可以按「初始化」。";
+    } catch (e) {
+      console.error(e);
 
+      answerDiv.textContent =
+        "❌ 生成失敗：\n" +
+        (e?.message || String(e));
 
-        showDiagnostic(
-          text,
+      log(
+        "生成錯誤：" +
+        (e?.stack || e?.message || String(e))
+      );
+
+    } finally {
+      sendBtn.disabled = false;
+      prompt.focus();
+    }
+  }
+
+  // ------------------------------------------------------------
+  // Clear model
+  // ------------------------------------------------------------
+
+  async function clearCurrentModel() {
+    if (initializing || downloading) {
+      return;
+    }
+
+    const key =
+      modelSelect.value;
+
+    const model =
+      MODELS[key];
+
+    const confirmed =
+      confirm(
+        `確定刪除 ${model.name} 的本機模型？`
+      );
+
+    if (!confirmed) return;
+
+    try {
+      // 如果目前正在使用同一個模型，
+      // 先丟掉 JS reference。
+      if (llmModelKey === key) {
+        llm = null;
+        llmModelKey = null;
+        sendBtn.disabled = true;
+      }
+
+      if (await deleteModel(key)) {
+        setStatus(
+          modelStatus,
+          `✓ 已刪除 ${model.name} 的 OPFS 模型。`,
           "good"
         );
 
-
-        setStatus(
-          "WebGPU 診斷通過，可以初始化。",
-          "success"
+        log(
+          "刪除模型：" +
+          model.name
         );
+      } else {
+        setStatus(
+          modelStatus,
+          "找不到本機模型。"
+        );
+      }
 
+    } catch (e) {
+      setStatus(
+        modelStatus,
+        "❌ 刪除失敗\n" +
+        (e?.message || String(e)),
+        "bad"
+      );
+    }
+  }
 
-        const model =
-          MODELS[currentModelId];
+  // ------------------------------------------------------------
+  // Model selection
+  // ------------------------------------------------------------
 
+  modelSelect.addEventListener(
+    "change",
+    async () => {
+      const key =
+        modelSelect.value;
 
-        if (
-          await modelExists(model)
-        ) {
+      const model =
+        MODELS[key];
 
-          initBtn.disabled =
-            false;
+      llm = null;
+      llmModelKey = null;
+      sendBtn.disabled = true;
 
-        } else {
+      try {
+        const exists =
+          await modelExists(key);
 
-          initBtn.disabled =
-            true;
+        if (exists) {
+          const file =
+            await getModelFile(key);
 
           setStatus(
-            "WebGPU 通過，但模型尚未下載。",
-            "warning"
+            modelStatus,
+            `✓ ${model.name} 已存在於 OPFS\n` +
+            `檔案大小：` +
+            `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+            "good"
           );
-
+        } else {
+          setStatus(
+            modelStatus,
+            `${model.name} 尚未下載。\n` +
+            `預估大小：約 ${model.approxMB} MB`
+          );
         }
 
-
-      } else {
-
-        text +=
-          "結果：❌ maxStorageBufferBindingSize 偏低\n\n";
-
-
-        text +=
-          "V5.1 不會進入 LLM 初始化，避免 Safari 在 GPU/WASM 階段直接中斷。";
-
-
-        showDiagnostic(
-          text,
+      } catch (e) {
+        setStatus(
+          modelStatus,
+          "讀取 OPFS 失敗\n" +
+          (e?.message || String(e)),
           "bad"
         );
+      }
+    }
+  );
 
+  // ------------------------------------------------------------
+  // Buttons
+  // ------------------------------------------------------------
+
+  gpuBtn.addEventListener(
+    "click",
+    gpuDiagnostic
+  );
+
+  downloadBtn.addEventListener(
+    "click",
+    downloadModel
+  );
+
+  initBtn.addEventListener(
+    "click",
+    initializeModel
+  );
+
+  clearBtn.addEventListener(
+    "click",
+    clearCurrentModel
+  );
+
+  sendBtn.addEventListener(
+    "click",
+    sendMessage
+  );
+
+  prompt.addEventListener(
+    "keydown",
+    e => {
+      if (
+        e.key === "Enter" &&
+        (e.ctrlKey || e.metaKey)
+      ) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+  );
+
+  // ------------------------------------------------------------
+  // Initial page
+  // ------------------------------------------------------------
+
+  async function boot() {
+    log("V6 啟動");
+    log(
+      "MediaPipe Tasks GenAI " +
+      MP_VERSION
+    );
+
+    if (!opfsSupported()) {
+      setStatus(
+        modelStatus,
+        "❌ 此瀏覽器沒有 OPFS。\n" +
+        "V6 無法使用。",
+        "bad"
+      );
+
+      return;
+    }
+
+    log("OPFS ✓");
+
+    checkPreviousCrash();
+
+    try {
+      const key =
+        modelSelect.value;
+
+      if (await modelExists(key)) {
+        const file =
+          await getModelFile(key);
 
         setStatus(
-          "WebGPU buffer capability 不足。",
-          "warning"
+          modelStatus,
+          `✓ ${MODELS[key].name} 已存在\n` +
+          `檔案大小：` +
+          `${(file.size / 1024 / 1024).toFixed(1)} MB\n` +
+          `可以按「初始化」。`,
+          "good"
         );
-
-
-        initBtn.disabled =
-          true;
-
+      } else {
+        setStatus(
+          modelStatus,
+          `目前選擇：${MODELS[key].name}\n` +
+          `尚未下載。`
+        );
       }
 
-
-    } catch (error) {
-
-      console.error(
-        "GPU diagnostic failed:",
-        error
+    } catch (e) {
+      log(
+        "Boot OPFS error：" +
+        (e?.message || String(e))
       );
-
-
-      showDiagnostic(
-        "❌ WebGPU 診斷錯誤\n\n" +
-        (
-          error?.stack ||
-          error?.message ||
-          String(error)
-        ),
-        "bad"
-      );
-
-
-      setStatus(
-        `GPU 診斷失敗：${error?.message || error}`,
-        "error"
-      );
-
-
-      initBtn.disabled =
-        true;
-
-
-    } finally {
-
-      diagnoseBtn.disabled =
-        false;
-
     }
-
-  }
-);
-
-
-/* =========================================================
-   MEDIAPIPE FILESET
-   ========================================================= */
-
-async function getFileset() {
-
-  if (fileset) {
-    return fileset;
   }
 
+  boot();
 
-  setStatus(
-    "載入 MediaPipe WASM..."
-  );
-
-
-  fileset =
-    await FilesetResolver.forGenAiTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.29/wasm"
-    );
-
-
-  return fileset;
-
-}
-
-
-/* =========================================================
-   CLOSE LLM
-   ========================================================= */
-
-async function closeLLM() {
-
-  if (!llm) {
-    return;
-  }
-
-
-  const old =
-    llm;
-
-
-  llm =
-    null;
-
-
-  try {
-
-    if (
-      typeof old.close ===
-      "function"
-    ) {
-
-      old.close();
-
-    }
-
-  } catch (_) {}
-
-
-  await new Promise(
-    resolve =>
-      setTimeout(
-        resolve,
-        300
-      )
-  );
-
-}
-
-
-/* =========================================================
-   INITIALIZE
-   ========================================================= */
-
-initBtn.addEventListener(
-  "click",
-  async () => {
-
-    if (initializing) {
-      return;
-    }
-
-
-    const model =
-      MODELS[currentModelId];
-
-
-    initializing =
-      true;
-
-
-    initBtn.disabled =
-      true;
-
-    downloadBtn.disabled =
-      true;
-
-    diagnoseBtn.disabled =
-      true;
-
-
-    try {
-
-      /*
-       * First make sure WebGPU is actually available.
-       */
-
-      if (
-        !navigator.gpu
-      ) {
-
-        throw new Error(
-          "navigator.gpu 不存在。"
-        );
-
-      }
-
-
-      /*
-       * Check model.
-       */
-
-      if (
-        !(await modelExists(model))
-      ) {
-
-        throw new Error(
-          "找不到模型檔案，請先下載。"
-        );
-
-      }
-
-
-      const size =
-        await modelSize(model);
-
-
-      if (
-        size <
-        100 *
-        1024 *
-        1024
-      ) {
-
-        throw new Error(
-          `模型檔案異常：${formatBytes(size)}`
-        );
-
-      }
-
-
-      setStatus(
-        `正在初始化 ${model.name}...`
-      );
-
-
-      /*
-       * Release any previous instance.
-       */
-
-      await closeLLM();
-
-
-      /*
-       * OPFS -> File -> stream reader
-       *
-       * No Blob.
-       * No Object URL.
-       * No arrayBuffer().
-       */
-
-      const handle =
-        await getHandle(model);
-
-
-      const file =
-        await handle.getFile();
-
-
-      const reader =
-        file
-          .stream()
-          .getReader();
-
-
-      /*
-       * Load MediaPipe WASM.
-       */
-
-      const genai =
-        await getFileset();
-
-
-      await new Promise(
-        resolve =>
-          setTimeout(
-            resolve,
-            250
-          )
-      );
-
-
-      /*
-       * LLM initialization.
-       */
-
-      const instance =
-        await LlmInference.createFromOptions(
-          genai,
-          {
-
-            baseOptions: {
-
-              modelAssetBuffer:
-                reader,
-
-              delegate:
-                "GPU"
-
-            },
-
-            maxTokens:
-              model.maxTokens,
-
-            topK:
-              model.topK,
-
-            temperature:
-              model.temperature,
-
-            randomSeed:
-              42
-
-          }
-        );
-
-
-      llm =
-        instance;
-
-
-      setStatus(
-        `${model.name} 初始化成功！`,
-        "success"
-      );
-
-
-      addMessage(
-        "system",
-        `✓ ${model.name} 初始化成功，可以聊天。`
-      );
-
-
-      sendBtn.disabled =
-        false;
-
-
-    } catch (error) {
-
-      console.error(
-        "LLM initialization error:",
-        error
-      );
-
-
-      setStatus(
-        `初始化失敗：${error?.message || error}`,
-        "error"
-      );
-
-
-      showDiagnostic(
-        "❌ LLM Initialization Error\n\n" +
-        (
-          error?.stack ||
-          error?.message ||
-          String(error)
-        ),
-        "bad"
-      );
-
-
-      addMessage(
-        "system",
-        "模型初始化失敗。\n\n" +
-        (
-          error?.message ||
-          String(error)
-        )
-      );
-
-
-    } finally {
-
-      initializing =
-        false;
-
-      downloadBtn.disabled =
-        false;
-
-      diagnoseBtn.disabled =
-        false;
-
-      initBtn.disabled =
-        !!llm;
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   MODEL SWITCH
-   ========================================================= */
-
-modelSelect.addEventListener(
-  "change",
-  async () => {
-
-    await closeLLM();
-
-
-    currentModelId =
-      modelSelect.value;
-
-
-    hfToken.classList.toggle(
-      "hidden",
-      currentModelId !== "gemma"
-    );
-
-
-    initBtn.disabled =
-      true;
-
-    sendBtn.disabled =
-      true;
-
-
-    const model =
-      MODELS[currentModelId];
-
-
-    if (
-      await modelExists(model)
-    ) {
-
-      const size =
-        await modelSize(model);
-
-
-      setStatus(
-        `${model.name} 已下載 (${formatBytes(size)})。請先 GPU 診斷。`,
-        "success"
-      );
-
-
-    } else {
-
-      setStatus(
-        `${model.name} 尚未下載。`
-      );
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   SEND
-   ========================================================= */
-
-sendBtn.addEventListener(
-  "click",
-  async () => {
-
-    if (
-      !llm ||
-      generating
-    ) {
-      return;
-    }
-
-
-    const text =
-      promptInput.value.trim();
-
-
-    if (!text) {
-      return;
-    }
-
-
-    promptInput.value =
-      "";
-
-
-    generating =
-      true;
-
-
-    sendBtn.disabled =
-      true;
-
-    stopBtn.disabled =
-      false;
-
-
-    addMessage(
-      "user",
-      text
-    );
-
-
-    const bubble =
-      addMessage(
-        "assistant",
-        "..."
-      );
-
-
-    let output =
-      "";
-
-
-    try {
-
-      await new Promise(
-        (resolve, reject) => {
-
-          let finished =
-            false;
-
-
-          const finish =
-            () => {
-
-              if (finished) {
-                return;
-              }
-
-              finished =
-                true;
-
-              resolve();
-
-            };
-
-
-          try {
-
-            llm.generateResponse(
-              text,
-              (
-                partial,
-                done
-              ) => {
-
-                if (partial) {
-
-                  output +=
-                    partial;
-
-                  bubble.textContent =
-                    output;
-
-                  chat.scrollTop =
-                    chat.scrollHeight;
-
-                }
-
-
-                if (done) {
-
-                  finish();
-
-                }
-
-              }
-            );
-
-
-          } catch (error) {
-
-            reject(error);
-
-          }
-
-        }
-      );
-
-
-    } catch (error) {
-
-      bubble.textContent =
-        output
-          ? `${output}\n\n[錯誤：${error?.message || error}]`
-          : `[錯誤：${error?.message || error}]`;
-
-    } finally {
-
-      generating =
-        false;
-
-      sendBtn.disabled =
-        !llm;
-
-      stopBtn.disabled =
-        true;
-
-    }
-
-  }
-);
-
-
-/* =========================================================
-   STOP
-   ========================================================= */
-
-stopBtn.addEventListener(
-  "click",
-  () => {
-
-    try {
-
-      if (
-        llm &&
-        typeof llm.cancelProcessing ===
-        "function"
-      ) {
-
-        llm.cancelProcessing();
-
-      }
-
-    } catch (_) {}
-
-
-    generating =
-      false;
-
-
-    sendBtn.disabled =
-      !llm;
-
-    stopBtn.disabled =
-      true;
-
-
-    setStatus(
-      "已停止生成。"
-    );
-
-  }
-);
-
-
-/* =========================================================
-   CLEAR
-   ========================================================= */
-
-clearBtn.addEventListener(
-  "click",
-  () => {
-
-    chat.innerHTML =
-      "";
-
-  }
-);
-
-
-/* =========================================================
-   STARTUP
-   ========================================================= */
-
-async function startup() {
-
-  /*
-   * IMPORTANT:
-   * Don't call WebGPU or MediaPipe automatically.
-   *
-   * Safari iPhone gets a user gesture only after
-   * the user taps the button.
-   */
-
-  hfToken.classList.add(
-    "hidden"
-  );
-
-
-  addMessage(
-    "system",
-    "V5.1 已啟動。\n" +
-    "請先按「GPU 診斷」，再按「下載模型」或「初始化」。"
-  );
-
-
-  try {
-
-    const model =
-      MODELS[currentModelId];
-
-
-    if (
-      await modelExists(model)
-    ) {
-
-      const size =
-        await modelSize(model);
-
-
-      setStatus(
-        `${model.name} 已存在 (${formatBytes(size)})。`,
-        "success"
-      );
-
-
-    } else {
-
-      setStatus(
-        `${model.name} 尚未下載。`
-      );
-
-    }
-
-
-  } catch (error) {
-
-    setStatus(
-      `啟動檢查失敗：${error?.message || error}`,
-      "error"
-    );
-
-
-    showDiagnostic(
-      "Startup Error\n\n" +
-      (
-        error?.stack ||
-        error?.message ||
-        String(error)
-      ),
-      "bad"
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   START
-   ========================================================= */
-
-startup();
-
+})();
 </script>
 
 </body>
 </html>
-
-
 
