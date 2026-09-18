@@ -2,13 +2,23 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,viewport-fit=cover"
+>
+
+<meta
+  name="apple-mobile-web-app-capable"
+  content="yes"
+>
+
 <meta name="theme-color" content="#111827">
-<title>V7 · Qwen GPU Initialization Test</title>
+
+<title>V8 · Qwen 0.5B Safari GPU Diagnostic</title>
 
 <style>
+
 * {
   box-sizing: border-box;
 }
@@ -28,6 +38,7 @@ body {
 main {
   width: min(760px, 100%);
   margin: auto;
+
   padding:
     calc(18px + env(safe-area-inset-top))
     16px
@@ -35,11 +46,11 @@ main {
 }
 
 h1 {
-  font-size: 22px;
   margin: 0 0 6px;
+  font-size: 22px;
 }
 
-.sub {
+.subtitle {
   color: #9ca3af;
   font-size: 13px;
   line-height: 1.5;
@@ -54,48 +65,73 @@ h1 {
   margin-bottom: 12px;
 }
 
-button {
-  width: 100%;
-  border: 0;
-  border-radius: 11px;
-  padding: 13px 14px;
-  margin-top: 9px;
-  background: #374151;
-  color: white;
-  font-size: 15px;
-  font-weight: 600;
-  -webkit-tap-highlight-color: transparent;
+.status {
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-button:disabled {
-  opacity: .45;
+button {
+  width: 100%;
+
+  border: 0;
+  border-radius: 11px;
+
+  padding: 13px 14px;
+  margin-top: 9px;
+
+  background: #374151;
+  color: white;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  -webkit-tap-highlight-color: transparent;
 }
 
 button.primary {
   background: #2563eb;
 }
 
-button.danger {
+button.green {
+  background: #166534;
+}
+
+button.orange {
+  background: #92400e;
+}
+
+button.red {
   background: #7f1d1d;
 }
 
-.status {
-  font-size: 14px;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
+button:disabled {
+  opacity: .45;
 }
 
 .log {
   background: #030712;
+
   border-radius: 10px;
+
   padding: 12px;
-  min-height: 220px;
-  max-height: 420px;
+
+  min-height: 260px;
+  max-height: 500px;
+
   overflow: auto;
+
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+
   font-size: 12px;
   line-height: 1.55;
 }
@@ -108,8 +144,12 @@ button.danger {
   color: #fcd34d;
 }
 
-.err {
+.error {
   color: #fca5a5;
+}
+
+.info {
+  color: #93c5fd;
 }
 
 .small {
@@ -117,6 +157,12 @@ button.danger {
   font-size: 12px;
   line-height: 1.5;
 }
+
+.section-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
 </style>
 </head>
 
@@ -124,258 +170,400 @@ button.danger {
 
 <main>
 
-  <h1>V7 · Qwen 0.5B GPU Initialization Test</h1>
+<h1>V8 · Qwen 0.5B GPU Diagnostic</h1>
 
-  <div class="sub">
-    iPhone / Safari 專用診斷版。<br>
-    這一版故意不建立聊天介面、不載入 Gemma、不使用 Blob、
-    IndexedDB、Cache API。
+<div class="subtitle">
+這一版只測 Qwen 0.5B。<br>
+不載入 Gemma、不建立聊天、不進行推論。<br>
+目的：確認 iPhone Safari 是否能完成 MediaPipe + LiteRT + WebGPU 初始化。
+</div>
+
+
+<!-- =====================================================
+     STATUS
+===================================================== -->
+
+<div class="card">
+
+  <div class="section-title">
+    目前狀態
   </div>
 
-  <div class="card">
-    <div class="status" id="status">
-等待測試。
-    </div>
-
-    <button id="gpuBtn" class="primary">
-      ① GPU 診斷
-    </button>
-
-    <button id="downloadBtn">
-      ② 下載 Qwen 0.5B
-    </button>
-
-    <button id="initBtn" disabled>
-      ③ 初始化 Qwen GPU
-    </button>
-
-    <button id="remoteBtn">
-      ④ 直接測試 Hugging Face 初始化
-    </button>
-
-    <button id="clearBtn" class="danger">
-      清除本次診斷狀態
-    </button>
+  <div id="status" class="status">
+V8 已準備。
   </div>
 
-  <div class="card">
-    <div class="small">
-      最後執行紀錄
-    </div>
+</div>
 
-    <div id="log" class="log"></div>
+
+<!-- =====================================================
+     TEST BUTTONS
+===================================================== -->
+
+<div class="card">
+
+  <div class="section-title">
+    測試
   </div>
+
+  <button
+    id="gpuBtn"
+    class="primary"
+  >
+    ① WebGPU 診斷
+  </button>
+
+
+  <button
+    id="mpBtn"
+  >
+    ② MediaPipe / WASM 診斷
+  </button>
+
+
+  <button
+    id="remoteBtn"
+    class="green"
+  >
+    ③ 遠端 Qwen GPU 初始化
+  </button>
+
+
+  <button
+    id="localBtn"
+    class="orange"
+  >
+    ④ 本地 OPFS Qwen GPU 初始化
+  </button>
+
+
+  <button
+    id="resetBtn"
+    class="red"
+  >
+    清除診斷 Marker
+  </button>
+
+</div>
+
+
+<!-- =====================================================
+     LOG
+===================================================== -->
+
+<div class="card">
+
+  <div class="section-title">
+    診斷紀錄
+  </div>
+
+  <div id="log" class="log"></div>
+
+</div>
+
+
+<!-- =====================================================
+     MODEL INFO
+===================================================== -->
+
+<div class="card">
+
+  <div class="small">
+
+    MediaPipe:
+    @mediapipe/tasks-genai@0.10.29
+
+    <br><br>
+
+    Qwen:
+    Qwen2.5-0.5B-Instruct
+
+    <br><br>
+
+    V8 不會自動下載模型。
+
+    <br>
+
+    本地測試需要先從 V7/V8 下載好的 OPFS
+    Qwen 模型。
+
+  </div>
+
+</div>
+
 
 </main>
+
 
 <script type="module">
 
 /* =========================================================
-   V7
-   ========================================================= */
+   CONFIG
+========================================================= */
 
 const MP_VERSION = "0.10.29";
-
-const WASM_URL =
-  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`;
 
 const MP_MODULE_URL =
   `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`;
 
-/*
- * Qwen 0.5B
- * 約 547 MB
- */
+const WASM_URL =
+  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`;
+
+
 const QWEN_URL =
-  "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/" +
+  "https://huggingface.co/litert-community/" +
+  "Qwen2.5-0.5B-Instruct/resolve/main/" +
   "Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task";
 
-const OPFS_NAME = "v7-qwen-05b.task";
 
-const statusEl = document.getElementById("status");
-const logEl = document.getElementById("log");
+const OPFS_NAME =
+  "v7-qwen-05b.task";
 
-const gpuBtn = document.getElementById("gpuBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const initBtn = document.getElementById("initBtn");
-const remoteBtn = document.getElementById("remoteBtn");
-const clearBtn = document.getElementById("clearBtn");
 
-let LlmInference = null;
+/* =========================================================
+   DOM
+========================================================= */
+
+const statusEl =
+  document.getElementById("status");
+
+const logEl =
+  document.getElementById("log");
+
+const gpuBtn =
+  document.getElementById("gpuBtn");
+
+const mpBtn =
+  document.getElementById("mpBtn");
+
+const remoteBtn =
+  document.getElementById("remoteBtn");
+
+const localBtn =
+  document.getElementById("localBtn");
+
+const resetBtn =
+  document.getElementById("resetBtn");
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
 let FilesetResolver = null;
+let LlmInference = null;
 
-let llm = null;
 let genai = null;
+let llm = null;
 
-let initialized = false;
+
+/* =========================================================
+   MARKERS
+========================================================= */
+
+const MARKER_KEY =
+  "v8_init_marker";
+
+const MARKER_TIME =
+  "v8_init_time";
 
 
 /* =========================================================
    LOG
-   ========================================================= */
+========================================================= */
 
-function now() {
+function timeString() {
+
   return new Date().toLocaleTimeString();
+
 }
 
-function log(msg, type = "") {
 
-  const line =
-    `[${now()}] ${msg}`;
+function log(message, type = "") {
 
-  const div = document.createElement("div");
-  div.textContent = line;
+  const div =
+    document.createElement("div");
 
-  if (type === "ok") {
-    div.className = "ok";
-  }
+  div.textContent =
+    `[${timeString()}] ${message}`;
 
-  if (type === "warn") {
-    div.className = "warn";
-  }
-
-  if (type === "err") {
-    div.className = "err";
+  if (type) {
+    div.className = type;
   }
 
   logEl.appendChild(div);
 
-  logEl.scrollTop = logEl.scrollHeight;
+  logEl.scrollTop =
+    logEl.scrollHeight;
 
-  console.log(line);
+  console.log(message);
 }
 
 
-function status(msg) {
-  statusEl.textContent = msg;
+function setStatus(message) {
+
+  statusEl.textContent =
+    message;
+
 }
 
 
-function fail(msg) {
-  status(msg);
-  log(msg, "err");
+function errorMessage(error) {
+
+  if (!error) {
+    return "Unknown error";
+  }
+
+  return String(
+    error.stack ||
+    error.message ||
+    error
+  );
+
 }
 
 
 /* =========================================================
-   CRASH MARKER
-   ========================================================= */
+   MARKER
+========================================================= */
 
-const CRASH_KEY = "v7_qwen_init_in_progress";
-
-function markInitStart(mode) {
+function setMarker(name) {
 
   try {
 
     localStorage.setItem(
-      CRASH_KEY,
-      JSON.stringify({
-        mode,
-        time: Date.now()
-      })
+      MARKER_KEY,
+      name
+    );
+
+    localStorage.setItem(
+      MARKER_TIME,
+      String(Date.now())
     );
 
   } catch (_) {}
+
 }
 
 
-function markInitDone() {
+function clearMarker() {
 
   try {
-    localStorage.removeItem(CRASH_KEY);
+
+    localStorage.removeItem(
+      MARKER_KEY
+    );
+
+    localStorage.removeItem(
+      MARKER_TIME
+    );
+
   } catch (_) {}
+
 }
 
 
-function checkPreviousCrash() {
+function showPreviousMarker() {
 
   try {
 
-    const raw =
-      localStorage.getItem(CRASH_KEY);
-
-    if (!raw) return;
-
-    const data = JSON.parse(raw);
-
-    const age =
-      Date.now() - Number(data.time || 0);
-
-    if (age < 30 * 60 * 1000) {
-
-      status(
-        "⚠️ 偵測到上一輪 Safari 可能在初始化期間被終止。\n" +
-        `上一輪模式：${data.mode}\n` +
-        "如果你剛剛看到 Safari 整頁重新載入，這個標記就是用來確認該情況。"
+    const marker =
+      localStorage.getItem(
+        MARKER_KEY
       );
 
-      log(
-        `上一輪初始化沒有正常完成：${data.mode}`,
-        "warn"
+    const time =
+      localStorage.getItem(
+        MARKER_TIME
       );
+
+    if (!marker) {
+      return;
     }
 
+    let ageText = "";
+
+    if (time) {
+
+      const age =
+        Date.now() -
+        Number(time);
+
+      ageText =
+        `\n時間：${Math.round(age / 1000)} 秒前`;
+    }
+
+    log(
+      `⚠️ 偵測到上一輪未完成：${marker}${ageText}`,
+      "warn"
+    );
+
+    setStatus(
+      "⚠️ 上一輪 Safari 可能在這個階段終止：\n\n" +
+      marker +
+      ageText +
+      "\n\n" +
+      "請依照按鈕重新測試。"
+    );
+
   } catch (_) {}
+
 }
 
 
 /* =========================================================
    LOAD MEDIAPIPE
-   ========================================================= */
+========================================================= */
 
 async function loadMediaPipe() {
 
-  if (LlmInference && FilesetResolver) {
+  if (
+    FilesetResolver &&
+    LlmInference
+  ) {
+
     return;
   }
 
+
   log(
-    `載入 @mediapipe/tasks-genai@${MP_VERSION} ...`
+    `載入 MediaPipe ${MP_VERSION}...`
   );
 
-  status(
-    "正在載入 MediaPipe Tasks GenAI..."
-  );
 
-  try {
+  const module =
+    await import(MP_MODULE_URL);
 
-    const mod =
-      await import(MP_MODULE_URL);
 
-    FilesetResolver =
-      mod.FilesetResolver;
+  FilesetResolver =
+    module.FilesetResolver;
 
-    LlmInference =
-      mod.LlmInference;
+  LlmInference =
+    module.LlmInference;
 
-    if (!FilesetResolver ||
-        !LlmInference) {
 
-      throw new Error(
-        "MediaPipe module 載入成功，但找不到 FilesetResolver / LlmInference"
-      );
-    }
+  if (
+    !FilesetResolver ||
+    !LlmInference
+  ) {
 
-    log(
-      "MediaPipe JS module ✓",
-      "ok"
+    throw new Error(
+      "找不到 FilesetResolver / LlmInference"
     );
-
-  } catch (err) {
-
-    fail(
-      "MediaPipe module 載入失敗\n\n" +
-      String(err?.stack || err)
-    );
-
-    throw err;
   }
+
+
+  log(
+    "MediaPipe JS module ✓",
+    "ok"
+  );
+
 }
 
 
 /* =========================================================
-   GPU TEST
-   ========================================================= */
+   GPU DIAGNOSTIC
+========================================================= */
 
 gpuBtn.onclick = async () => {
 
@@ -383,435 +571,541 @@ gpuBtn.onclick = async () => {
 
   try {
 
-    log("開始 WebGPU 診斷...");
-    status("正在檢查 WebGPU...");
+    setStatus(
+      "正在檢查 WebGPU..."
+    );
 
-    if (!("gpu" in navigator)) {
+    log(
+      "========== GPU TEST =========="
+    );
+
+
+    if (
+      !navigator.gpu
+    ) {
 
       throw new Error(
         "navigator.gpu 不存在"
       );
     }
 
-    log("navigator.gpu ✓", "ok");
+
+    log(
+      "navigator.gpu ✓",
+      "ok"
+    );
+
 
     const adapter =
       await navigator.gpu.requestAdapter();
 
+
     if (!adapter) {
 
       throw new Error(
-        "requestAdapter() 回傳 null"
+        "requestAdapter() = null"
       );
     }
 
-    log("GPU Adapter ✓", "ok");
+
+    log(
+      "GPU Adapter ✓",
+      "ok"
+    );
+
 
     const limits =
       adapter.limits;
 
-    log(
-      "maxStorageBufferBindingSize = " +
-      formatBytes(limits.maxStorageBufferBindingSize)
-    );
 
     log(
       "maxBufferSize = " +
-      formatBytes(limits.maxBufferSize)
+      formatBytes(
+        limits.maxBufferSize
+      )
     );
 
+
+    log(
+      "maxStorageBufferBindingSize = " +
+      formatBytes(
+        limits.maxStorageBufferBindingSize
+      )
+    );
+
+
     const features =
-      Array.from(adapter.features || []);
+      Array.from(
+        adapter.features || []
+      );
+
 
     log(
       "Features:\n" +
-      (features.length
-        ? features.join(", ")
-        : "(none)")
+      (
+        features.length
+          ? features.join(", ")
+          : "(none)"
+      )
     );
+
 
     /*
-     * 故意不呼叫 adapter.requestAdapterInfo()
+     * 故意不使用：
      *
-     * Safari/WebKit 某些版本可能沒有正常提供
-     * requestAdapterInfo()。
+     * adapter.requestAdapterInfo()
+     *
+     * 避免 Safari / WebKit 相容性問題。
      */
 
-    status(
-      "✓ WebGPU 基本診斷通過\n\n" +
-      "下一步可以按「下載 Qwen 0.5B」。"
+
+    setStatus(
+      "✓ WebGPU 基本診斷成功。\n\n" +
+      "可以繼續測試 ② MediaPipe / WASM。"
     );
 
+
     log(
-      "GPU 基本檢查完成 ✓",
+      "GPU TEST PASS ✓",
       "ok"
     );
 
-  } catch (err) {
 
-    fail(
-      "WebGPU 診斷失敗\n\n" +
-      String(err?.stack || err)
+  } catch (error) {
+
+    setStatus(
+      "WebGPU 診斷失敗"
+    );
+
+    log(
+      errorMessage(error),
+      "error"
     );
 
   } finally {
 
     gpuBtn.disabled = false;
+
   }
+
 };
 
 
 /* =========================================================
-   FORMAT BYTES
-   ========================================================= */
+   MEDIAPIPE / WASM TEST
+========================================================= */
 
-function formatBytes(n) {
+mpBtn.onclick = async () => {
 
-  if (!Number.isFinite(n)) {
-    return "unknown";
-  }
-
-  const gb =
-    n / 1024 / 1024 / 1024;
-
-  if (gb >= 1) {
-    return gb.toFixed(2) + " GB";
-  }
-
-  return (
-    n / 1024 / 1024
-  ).toFixed(1) + " MB";
-}
-
-
-/* =========================================================
-   OPFS
-   ========================================================= */
-
-async function getOPFSFile() {
-
-  if (!("storage" in navigator) ||
-      !navigator.storage.getDirectory) {
-
-    throw new Error(
-      "這個 Safari 不支援 OPFS"
-    );
-  }
-
-  const root =
-    await navigator.storage.getDirectory();
-
-  return await root.getFileHandle(
-    OPFS_NAME,
-    { create: false }
-  );
-}
-
-
-async function getOrCreateOPFSFile() {
-
-  const root =
-    await navigator.storage.getDirectory();
-
-  return await root.getFileHandle(
-    OPFS_NAME,
-    { create: true }
-  );
-}
-
-
-/* =========================================================
-   CHECK LOCAL MODEL
-   ========================================================= */
-
-async function checkLocalModel() {
+  mpBtn.disabled = true;
 
   try {
 
-    const handle =
-      await getOPFSFile();
-
-    const file =
-      await handle.getFile();
-
-    if (file.size > 100 * 1024 * 1024) {
-
-      log(
-        "本地 Qwen 模型存在：" +
-        formatBytes(file.size),
-        "ok"
-      );
-
-      return true;
-    }
-
-  } catch (_) {}
-
-  return false;
-}
-
-
-/* =========================================================
-   DOWNLOAD
-   ========================================================= */
-
-downloadBtn.onclick = async () => {
-
-  downloadBtn.disabled = true;
-
-  try {
-
-    status(
-      "正在下載 Qwen 0.5B...\n" +
-      "請不要切換 App。"
+    setStatus(
+      "正在測試 MediaPipe / WASM..."
     );
 
-    log("開始下載 Qwen 0.5B...");
-    log(QWEN_URL);
-
-    const response =
-      await fetch(QWEN_URL, {
-        cache: "no-store"
-      });
-
-    if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status} ${response.statusText}`
-      );
-    }
-
-    if (!response.body) {
-
-      throw new Error(
-        "response.body 不存在，無法串流下載"
-      );
-    }
-
-    const total =
-      Number(
-        response.headers.get("content-length") || 0
-      );
 
     log(
-      "HTTP response ✓" +
-      (total
-        ? `，Content-Length ${formatBytes(total)}`
-        : "")
+      "========== MEDIAPIPE TEST =========="
     );
 
-    const handle =
-      await getOrCreateOPFSFile();
 
-    const writable =
-      await handle.createWritable();
-
-    const reader =
-      response.body.getReader();
-
-    let received = 0;
-    let lastShown = 0;
-
-    try {
-
-      while (true) {
-
-        const {
-          done,
-          value
-        } = await reader.read();
-
-        if (done) break;
-
-        if (!value) continue;
-
-        await writable.write(value);
-
-        received += value.byteLength;
-
-        const mb =
-          received / 1024 / 1024;
-
-        if (
-          mb - lastShown >= 10 ||
-          received === value.byteLength
-        ) {
-
-          lastShown = mb;
-
-          const percent =
-            total
-              ? ` ${((received / total) * 100).toFixed(1)}%`
-              : "";
-
-          status(
-            `正在下載 Qwen 0.5B...\n` +
-            `${mb.toFixed(1)} MB${percent}`
-          );
-        }
-      }
-
-      await writable.close();
-
-    } catch (err) {
-
-      try {
-        await writable.abort();
-      } catch (_) {}
-
-      throw err;
-    }
-
-    const file =
-      await handle.getFile();
-
-    log(
-      `下載完成：${formatBytes(file.size)}`,
-      "ok"
+    setMarker(
+      "STEP 1 · importing MediaPipe"
     );
 
-    if (file.size < 100 * 1024 * 1024) {
-
-      throw new Error(
-        "模型檔案異常地小，可能沒有下載完整"
-      );
-    }
-
-    initBtn.disabled = false;
-
-    status(
-      "✓ Qwen 已下載完成\n\n" +
-      "現在可以按「③ 初始化 Qwen GPU」。"
-    );
-
-  } catch (err) {
-
-    fail(
-      "下載失敗\n\n" +
-      String(err?.stack || err)
-    );
-
-  } finally {
-
-    downloadBtn.disabled = false;
-  }
-};
-
-
-/* =========================================================
-   INITIALIZE LOCAL OPFS MODEL
-   ========================================================= */
-
-initBtn.onclick = async () => {
-
-  if (initialized) {
-
-    status(
-      "Qwen 已經初始化成功。"
-    );
-
-    return;
-  }
-
-  initBtn.disabled = true;
-  remoteBtn.disabled = true;
-  downloadBtn.disabled = true;
-  gpuBtn.disabled = true;
-
-  markInitStart("local-opfs");
-
-  try {
-
-    log("========== LOCAL INIT ==========");
-    log("STEP 1 / 5：載入 MediaPipe");
-
-    status(
-      "初始化 1 / 5\n" +
-      "載入 MediaPipe..."
-    );
 
     await loadMediaPipe();
 
+
+    setMarker(
+      "STEP 2 · creating GenAI Fileset"
+    );
+
+
     log(
-      "STEP 1 OK",
-      "ok"
+      "建立 FilesetResolver..."
     );
 
-
-    /* -----------------------------------------------------
-       STEP 2
-       ----------------------------------------------------- */
-
-    log("STEP 2 / 5：建立 GenAI Fileset");
-
-    status(
-      "初始化 2 / 5\n" +
-      "建立 GenAI Fileset..."
-    );
 
     genai =
       await FilesetResolver.forGenAiTasks(
         WASM_URL
       );
 
+
+    clearMarker();
+
+
     log(
-      "STEP 2 OK：GenAI Fileset",
+      "GenAI Fileset ✓",
       "ok"
     );
 
 
-    /* -----------------------------------------------------
-       STEP 3
-       ----------------------------------------------------- */
-
-    log("STEP 3 / 5：取得 OPFS Qwen 檔案");
-
-    status(
-      "初始化 3 / 5\n" +
-      "開啟 OPFS Qwen 模型..."
+    setStatus(
+      "✓ MediaPipe / WASM 初始化成功。\n\n" +
+      "這表示 WASM 本身至少可以啟動。"
     );
 
+
+    log(
+      "MEDIAPIPE TEST PASS ✓",
+      "ok"
+    );
+
+
+  } catch (error) {
+
+    clearMarker();
+
+
+    setStatus(
+      "MediaPipe / WASM JS error"
+    );
+
+
+    log(
+      errorMessage(error),
+      "error"
+    );
+
+  } finally {
+
+    mpBtn.disabled = false;
+
+  }
+
+};
+
+
+/* =========================================================
+   REMOTE QWEN TEST
+========================================================= */
+
+remoteBtn.onclick = async () => {
+
+  remoteBtn.disabled = true;
+
+  gpuBtn.disabled = true;
+  mpBtn.disabled = true;
+  localBtn.disabled = true;
+
+
+  try {
+
+    log(
+      "========== REMOTE QWEN TEST =========="
+    );
+
+
+    setStatus(
+      "Remote Qwen 測試\n\n" +
+      "這次完全不使用 OPFS。\n\n" +
+      "直接讓 MediaPipe 從 Hugging Face 載入 Qwen。"
+    );
+
+
+    /* ---------------------------------------------
+       STEP A
+    --------------------------------------------- */
+
+    setMarker(
+      "REMOTE 1 · loading MediaPipe"
+    );
+
+
+    log(
+      "REMOTE 1：load MediaPipe"
+    );
+
+
+    await loadMediaPipe();
+
+
+    log(
+      "REMOTE 1 PASS",
+      "ok"
+    );
+
+
+    /* ---------------------------------------------
+       STEP B
+    --------------------------------------------- */
+
+    setMarker(
+      "REMOTE 2 · creating GenAI Fileset"
+    );
+
+
+    log(
+      "REMOTE 2：create GenAI Fileset"
+    );
+
+
+    genai =
+      await FilesetResolver.forGenAiTasks(
+        WASM_URL
+      );
+
+
+    log(
+      "REMOTE 2 PASS",
+      "ok"
+    );
+
+
+    /* ---------------------------------------------
+       STEP C
+    --------------------------------------------- */
+
+    setMarker(
+      "REMOTE 3 · createFromModelPath"
+    );
+
+
+    log(
+      "REMOTE 3：即將進入 LlmInference.createFromModelPath()",
+      "warn"
+    );
+
+
+    setStatus(
+      "⚠️ Remote Qwen GPU 初始化中\n\n" +
+      "如果 Safari 現在整頁重新載入，" +
+      "代表 crash 發生在 MediaPipe / LiteRT / GPU 路徑。\n\n" +
+      "請不要重複按按鈕。"
+    );
+
+
+    /*
+     * 官方 README 使用的路徑：
+     *
+     * LlmInference.createFromModelPath(
+     *   genai,
+     *   MODEL_URL
+     * )
+     *
+     * 這次不碰 OPFS。
+     */
+
+
+    llm =
+      await LlmInference.createFromModelPath(
+        genai,
+        QWEN_URL
+      );
+
+
+    /* ---------------------------------------------
+       SUCCESS
+    --------------------------------------------- */
+
+    clearMarker();
+
+
+    log(
+      "REMOTE 4：Qwen LLM 建立成功 ✓",
+      "ok"
+    );
+
+
+    setStatus(
+      "🎉 Remote Qwen GPU 初始化成功！\n\n" +
+      "這是非常重要的結果：\n\n" +
+      "✓ MediaPipe\n" +
+      "✓ WASM\n" +
+      "✓ LiteRT\n" +
+      "✓ WebGPU\n" +
+      "✓ Qwen 0.5B\n\n" +
+      "都已經可以完成初始化。"
+    );
+
+
+  } catch (error) {
+
+    clearMarker();
+
+
+    setStatus(
+      "Remote Qwen 發生 JavaScript error"
+    );
+
+
+    log(
+      errorMessage(error),
+      "error"
+    );
+
+
+  } finally {
+
+    remoteBtn.disabled = false;
+
+    gpuBtn.disabled = false;
+    mpBtn.disabled = false;
+    localBtn.disabled = false;
+
+  }
+
+};
+
+
+/* =========================================================
+   LOCAL OPFS TEST
+========================================================= */
+
+localBtn.onclick = async () => {
+
+  localBtn.disabled = true;
+
+  gpuBtn.disabled = true;
+  mpBtn.disabled = true;
+  remoteBtn.disabled = true;
+
+
+  try {
+
+    log(
+      "========== LOCAL OPFS TEST =========="
+    );
+
+
+    setStatus(
+      "Local OPFS Qwen 測試\n\n" +
+      "這次使用你之前下載好的 Qwen 模型。"
+    );
+
+
+    /* ---------------------------------------------
+       STEP A
+    --------------------------------------------- */
+
+    setMarker(
+      "LOCAL 1 · loading MediaPipe"
+    );
+
+
+    log(
+      "LOCAL 1：load MediaPipe"
+    );
+
+
+    await loadMediaPipe();
+
+
+    log(
+      "LOCAL 1 PASS",
+      "ok"
+    );
+
+
+    /* ---------------------------------------------
+       STEP B
+    --------------------------------------------- */
+
+    setMarker(
+      "LOCAL 2 · creating GenAI Fileset"
+    );
+
+
+    log(
+      "LOCAL 2：create GenAI Fileset"
+    );
+
+
+    genai =
+      await FilesetResolver.forGenAiTasks(
+        WASM_URL
+      );
+
+
+    log(
+      "LOCAL 2 PASS",
+      "ok"
+    );
+
+
+    /* ---------------------------------------------
+       STEP C
+    --------------------------------------------- */
+
+    setMarker(
+      "LOCAL 3 · opening OPFS"
+    );
+
+
+    log(
+      "LOCAL 3：開啟 OPFS"
+    );
+
+
+    if (
+      !navigator.storage ||
+      !navigator.storage.getDirectory
+    ) {
+
+      throw new Error(
+        "此 Safari 不支援 OPFS"
+      );
+    }
+
+
+    const root =
+      await navigator.storage.getDirectory();
+
+
     const handle =
-      await getOPFSFile();
+      await root.getFileHandle(
+        OPFS_NAME,
+        {
+          create: false
+        }
+      );
+
 
     const file =
       await handle.getFile();
 
+
     log(
-      "Qwen file = " +
+      "OPFS Qwen size = " +
       formatBytes(file.size),
       "ok"
     );
 
 
-    /* -----------------------------------------------------
-       STEP 4
-       ----------------------------------------------------- */
+    if (
+      file.size <
+      100 * 1024 * 1024
+    ) {
+
+      throw new Error(
+        "Qwen OPFS 檔案大小異常"
+      );
+    }
+
+
+    /* ---------------------------------------------
+       STEP D
+    --------------------------------------------- */
+
+    setMarker(
+      "LOCAL 4 · creating stream reader"
+    );
+
 
     log(
-      "STEP 4 / 5：建立 model stream reader"
+      "LOCAL 4：建立 ReadableStream reader"
     );
 
-    status(
-      "初始化 4 / 5\n" +
-      "建立模型串流...\n\n" +
-      "下一步會進入 LiteRT / GPU 初始化。\n" +
-      "這是本次測試最重要的步驟。"
-    );
 
-    /*
-     * MediaPipe 官方 JS sample 使用的方式：
-     *
-     * const modelStream =
-     *   file.stream().getReader();
-     *
-     * modelAssetBuffer:
-     *   modelStream
-     *
-     * 不把整個模型轉成 ArrayBuffer。
-     */
     const reader =
-      file.stream().getReader();
+      file
+        .stream()
+        .getReader();
+
 
     log(
       "ReadableStreamDefaultReader ✓",
@@ -819,37 +1113,28 @@ initBtn.onclick = async () => {
     );
 
 
-    /* -----------------------------------------------------
-       STEP 5
-       ----------------------------------------------------- */
+    /* ---------------------------------------------
+       STEP E
+    --------------------------------------------- */
+
+    setMarker(
+      "LOCAL 5 · createFromOptions GPU"
+    );
+
 
     log(
-      "STEP 5 / 5：開始 LlmInference.createFromOptions()"
+      "LOCAL 5：即將進入 createFromOptions()",
+      "warn"
     );
 
-    log(
-      "⚠️ 現在進入 LiteRT / WebGPU 初始化..."
+
+    setStatus(
+      "⚠️ Local Qwen GPU 初始化中\n\n" +
+      "這是本次 Local 測試最後一個階段。\n\n" +
+      "如果 Safari 整頁重新載入，" +
+      "代表 crash 發生在這裡附近。"
     );
 
-    status(
-      "初始化 5 / 5\n\n" +
-      "正在建立 Qwen 0.5B GPU LLM...\n\n" +
-      "如果 Safari 在這裡整頁重新載入，" +
-      "就代表 crash 發生在這個 native/WASM/GPU 路徑。"
-    );
-
-    /*
-     * 重要：
-     *
-     * 不使用 Blob
-     * 不使用 ObjectURL
-     * 不使用 ArrayBuffer
-     * 不使用 IndexedDB
-     * 不使用 Cache API
-     *
-     * 直接把 OPFS file stream reader
-     * 交給 MediaPipe。
-     */
 
     llm =
       await LlmInference.createFromOptions(
@@ -860,250 +1145,164 @@ initBtn.onclick = async () => {
             delegate: "GPU"
           },
 
-          /*
-           * 故意壓低，避免初始化後
-           * KV cache 再增加太多記憶體。
-           */
           maxTokens: 64,
 
           topK: 1,
 
-          temperature: 0.0,
+          temperature: 0,
 
           randomSeed: 1
         }
       );
 
 
-    /* -----------------------------------------------------
+    /* ---------------------------------------------
        SUCCESS
-       ----------------------------------------------------- */
+    --------------------------------------------- */
 
-    initialized = true;
+    clearMarker();
 
-    markInitDone();
 
     log(
-      "========== INITIALIZATION SUCCESS ==========",
+      "LOCAL Qwen initialization SUCCESS ✓",
       "ok"
     );
 
-    status(
-      "🎉 Qwen 0.5B GPU 初始化成功！\n\n" +
-      "這代表：\n" +
-      "✓ MediaPipe\n" +
-      "✓ WASM\n" +
-      "✓ model stream\n" +
-      "✓ LiteRT\n" +
-      "✓ WebGPU delegate\n" +
-      "至少已經成功完成初始化。"
+
+    setStatus(
+      "🎉 Local OPFS Qwen GPU 初始化成功！\n\n" +
+      "代表本地模型串流也可以正常交給 MediaPipe。"
     );
 
-  } catch (err) {
 
-    markInitDone();
+  } catch (error) {
 
-    /*
-     * 注意：
-     *
-     * 如果 Safari 整頁直接重載，
-     * JavaScript 不會有機會跑到這裡。
-     *
-     * 所以這個 catch 只負責真正的 JS exception。
-     */
+    clearMarker();
 
-    fail(
-      "Qwen 初始化 JavaScript 例外\n\n" +
-      String(err?.stack || err)
+
+    setStatus(
+      "Local Qwen JavaScript error"
     );
+
+
+    log(
+      errorMessage(error),
+      "error"
+    );
+
 
   } finally {
 
-    initBtn.disabled = initialized;
-    remoteBtn.disabled = false;
-    downloadBtn.disabled = false;
+    localBtn.disabled = false;
+
     gpuBtn.disabled = false;
+    mpBtn.disabled = false;
+    remoteBtn.disabled = false;
+
   }
+
 };
 
 
 /* =========================================================
-   REMOTE TEST
-   ========================================================= */
+   RESET
+========================================================= */
 
-remoteBtn.onclick = async () => {
+resetBtn.onclick = () => {
 
-  remoteBtn.disabled = true;
-  initBtn.disabled = true;
-  downloadBtn.disabled = true;
-  gpuBtn.disabled = true;
-
-  markInitStart("remote-url");
-
-  try {
-
-    log("========== REMOTE URL TEST ==========");
-
-    status(
-      "Remote 測試\n\n" +
-      "這次不使用 OPFS。\n" +
-      "直接把 Hugging Face URL 交給 MediaPipe。"
-    );
-
-    await loadMediaPipe();
-
-    log(
-      "建立 GenAI Fileset..."
-    );
-
-    genai =
-      await FilesetResolver.forGenAiTasks(
-        WASM_URL
-      );
-
-    log(
-      "GenAI Fileset ✓",
-      "ok"
-    );
-
-    log(
-      "開始 createFromModelPath()..."
-    );
-
-    log(
-      "⚠️ 如果 Safari 在這裡整頁重載，" +
-      "就可以排除 OPFS stream 本身。"
-    );
-
-    status(
-      "Remote 測試\n\n" +
-      "正在直接初始化 Qwen URL..."
-    );
-
-    llm =
-      await LlmInference.createFromModelPath(
-        genai,
-        QWEN_URL
-      );
-
-    initialized = true;
-
-    markInitDone();
-
-    log(
-      "Remote initialization SUCCESS",
-      "ok"
-    );
-
-    status(
-      "🎉 Remote Qwen 初始化成功！\n\n" +
-      "這代表 MediaPipe + LiteRT + GPU 路徑本身可以工作。\n\n" +
-      "如果 Local OPFS 失敗、Remote 成功，" +
-      "下一版就應該只處理本地模型供應方式。"
-    );
-
-  } catch (err) {
-
-    markInitDone();
-
-    fail(
-      "Remote 初始化 JS error\n\n" +
-      String(err?.stack || err)
-    );
-
-  } finally {
-
-    remoteBtn.disabled = false;
-    initBtn.disabled = initialized;
-    downloadBtn.disabled = false;
-    gpuBtn.disabled = false;
-  }
-};
-
-
-/* =========================================================
-   CLEAR
-   ========================================================= */
-
-clearBtn.onclick = () => {
-
-  try {
-    localStorage.removeItem(CRASH_KEY);
-  } catch (_) {}
+  clearMarker();
 
   logEl.innerHTML = "";
 
-  initialized = false;
   llm = null;
   genai = null;
 
-  initBtn.disabled = true;
-
-  status(
-    "診斷狀態已清除。\n\n" +
-    "請重新依序：\n" +
-    "① GPU 診斷\n" +
-    "② 下載 Qwen\n" +
-    "③ 初始化 Qwen GPU"
+  setStatus(
+    "V8 診斷 Marker 已清除。\n\n" +
+    "建議先按 ①，再按 ②，最後按 ③。"
   );
 
   log(
-    "V7 reset"
+    "Marker cleared."
   );
+
 };
+
+
+/* =========================================================
+   FORMAT BYTES
+========================================================= */
+
+function formatBytes(bytes) {
+
+  if (
+    !Number.isFinite(bytes)
+  ) {
+
+    return "unknown";
+  }
+
+
+  if (
+    bytes >=
+    1024 * 1024 * 1024
+  ) {
+
+    return (
+      bytes /
+      1024 /
+      1024 /
+      1024
+    ).toFixed(2) + " GB";
+  }
+
+
+  return (
+    bytes /
+    1024 /
+    1024
+  ).toFixed(1) + " MB";
+
+}
 
 
 /* =========================================================
    STARTUP
-   ========================================================= */
+========================================================= */
 
-checkPreviousCrash();
+showPreviousMarker();
 
-(async () => {
 
-  try {
+if (
+  !localStorage.getItem(
+    MARKER_KEY
+  )
+) {
 
-    const exists =
-      await checkLocalModel();
+  setStatus(
+    "V8 已準備。\n\n" +
+    "建議測試順序：\n\n" +
+    "① WebGPU\n" +
+    "② MediaPipe / WASM\n" +
+    "③ 遠端 Qwen GPU 初始化\n" +
+    "④ 本地 OPFS Qwen GPU 初始化"
+  );
 
-    if (exists) {
+}
 
-      initBtn.disabled = false;
 
-      if (
-        !statusEl.textContent ||
-        statusEl.textContent === "等待測試。"
-      ) {
+log(
+  "V8 ready.",
+  "info"
+);
 
-        status(
-          "偵測到 Qwen 0.5B 已存在於 OPFS。\n\n" +
-          "可以直接按「③ 初始化 Qwen GPU」。"
-        );
-      }
+log(
+  `MediaPipe version: ${MP_VERSION}`
+);
 
-    } else {
-
-      if (
-        !statusEl.textContent ||
-        statusEl.textContent === "等待測試。"
-      ) {
-
-        status(
-          "V7 就緒。\n\n" +
-          "建議先按「① GPU 診斷」。"
-        );
-      }
-    }
-
-  } catch (err) {
-
-    log(
-      "啟動檢查失敗：" +
-      String(err)
-    );
-  }
-
-})();
+log(
+  "Qwen URL: " + QWEN_URL
+);
 
 </script>
 
