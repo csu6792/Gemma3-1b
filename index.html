@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport"
       content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>V10 · iPhone LLM GPU Diagnostic</title>
+<title>V10.1 · iPhone LLM GPU Diagnostic</title>
 
 <style>
   * {
@@ -49,6 +49,18 @@
     margin-bottom: 14px;
   }
 
+  input {
+    width: 100%;
+    height: 46px;
+    padding: 0 12px;
+    margin: 6px 0 10px;
+    border-radius: 9px;
+    border: 1px solid #30363d;
+    background: #0d1117;
+    color: #e6edf3;
+    font-size: 14px;
+  }
+
   button {
     width: 100%;
     min-height: 48px;
@@ -85,7 +97,7 @@
   }
 
   #log {
-    min-height: 260px;
+    min-height: 280px;
     max-height: 55vh;
     overflow: auto;
     font-family:
@@ -120,17 +132,28 @@
     font-size: 11px;
     line-height: 1.5;
   }
+
+  .token-note {
+    color: #d29922;
+    font-size: 12px;
+    line-height: 1.5;
+  }
 </style>
 </head>
 
 <body>
 
-<h1>V10 · iPhone LLM GPU Diagnostic</h1>
+<h1>V10.1 · iPhone LLM GPU Diagnostic</h1>
 
 <div class="sub">
-  這一版不測 CPU LLM。<br>
-  只分離：WebGPU 本身 → Qwen 0.5B → Gemma 3 1B。
+  Qwen 0.5B + Gemma 3 1B<br>
+  Gemma 使用 Hugging Face Access Token；Qwen 不需要。
 </div>
+
+
+<!-- =======================================================
+     ① WEBGPU
+     ======================================================= -->
 
 <div class="card">
 
@@ -147,32 +170,80 @@
 </div>
 
 
+<!-- =======================================================
+     ② HF TOKEN
+     ======================================================= -->
+
 <div class="card">
 
-  <h2>② 模型</h2>
+  <h2>② Hugging Face Access Token</h2>
 
-  <button id="downloadQwenBtn" class="secondary">
+  <input
+    id="hfToken"
+    type="password"
+    autocomplete="off"
+    placeholder="hf_xxxxxxxxxxxxxxxxx"
+  >
+
+  <div class="token-note">
+    只有下載 Gemma 時使用。
+    不會寫入 OPFS，也不會傳給 MediaPipe。
+  </div>
+
+  <div class="small">
+    請先在 Hugging Face 對 Gemma 模型完成 Access / 授權，
+    再把你的 Read token 貼在這裡。
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     ③ DOWNLOAD
+     ======================================================= -->
+
+<div class="card">
+
+  <h2>③ 模型下載</h2>
+
+  <button
+    id="downloadQwenBtn"
+    class="secondary"
+  >
     下載 Qwen 0.5B
   </button>
 
-  <button id="downloadGemmaBtn" class="secondary">
+  <button
+    id="downloadGemmaBtn"
+    class="secondary"
+  >
     下載 Gemma 3 1B
   </button>
 
-  <button id="deleteBtn" class="warning">
+  <button
+    id="deleteBtn"
+    class="warning"
+  >
     清除所有本機模型
   </button>
 
-  <div id="modelStatus" class="status">
+  <div
+    id="modelStatus"
+    class="status"
+  >
     尚未檢查 OPFS
   </div>
 
 </div>
 
 
+<!-- =======================================================
+     ④ INITIALIZATION
+     ======================================================= -->
+
 <div class="card">
 
-  <h2>③ GPU 初始化</h2>
+  <h2>④ GPU 初始化</h2>
 
   <button id="qwenBtn">
     Qwen 0.5B · GPU 初始化
@@ -182,54 +253,96 @@
     Gemma 3 1B · GPU 初始化
   </button>
 
-  <div id="initStatus" class="status">
+  <div
+    id="initStatus"
+    class="status"
+  >
     尚未開始
   </div>
 
 </div>
 
 
+<!-- =======================================================
+     ⑤ LOG
+     ======================================================= -->
+
 <div class="card">
 
-  <h2>④ Log</h2>
+  <h2>⑤ Log</h2>
 
-  <div id="log" class="status"></div>
+  <div
+    id="log"
+    class="status"
+  ></div>
 
-  <div class="small" style="margin-top:10px;">
-    如果按下 GPU 初始化後整個 Safari 分頁重新載入，
-    而 Log 沒有 catch 到 JavaScript error，
-    請把重新載入後顯示的「上一輪未完成」內容貼給我。
+  <div
+    class="small"
+    style="margin-top:10px;"
+  >
+    如果按 GPU 初始化後 Safari 整頁重新載入，
+    重新進入頁面後會顯示上一輪停在哪個 Stage。
   </div>
+
 </div>
 
 
 <script type="module">
 
 /* =========================================================
-   V10
-   MediaPipe Tasks GenAI 0.10.29
-   Qwen 0.5B + Gemma 3 1B
-   OPFS + streaming
+   CONFIG
    ========================================================= */
 
 const MP_VERSION = "0.10.29";
 
+
 const QWEN_URL =
   "https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task";
+
 
 const GEMMA_URL =
   "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4-web.task";
 
-const QWEN_FILE = "qwen-0.5b.task";
-const GEMMA_FILE = "gemma3-1b.task";
 
-const STAGE_KEY = "v10_llm_stage";
-const TIME_KEY = "v10_llm_stage_time";
+const QWEN_FILE =
+  "qwen-0.5b.task";
 
-const logEl = document.getElementById("log");
-const gpuStatus = document.getElementById("gpuStatus");
-const modelStatus = document.getElementById("modelStatus");
-const initStatus = document.getElementById("initStatus");
+
+const GEMMA_FILE =
+  "gemma3-1b.task";
+
+
+const STAGE_KEY =
+  "v101_llm_stage";
+
+
+const TIME_KEY =
+  "v101_llm_stage_time";
+
+
+/* =========================================================
+   DOM
+   ========================================================= */
+
+const logEl =
+  document.getElementById("log");
+
+const gpuStatus =
+  document.getElementById("gpuStatus");
+
+const modelStatus =
+  document.getElementById("modelStatus");
+
+const initStatus =
+  document.getElementById("initStatus");
+
+const hfTokenInput =
+  document.getElementById("hfToken");
+
+
+/* =========================================================
+   RUNTIME
+   ========================================================= */
 
 let FilesetResolver = null;
 let LlmInference = null;
@@ -243,14 +356,19 @@ let currentLLM = null;
    ========================================================= */
 
 function now() {
+
   return new Date().toLocaleTimeString();
+
 }
+
 
 function log(message, type = "") {
 
-  const line = `[${now()}] ${message}`;
+  const line =
+    `[${now()}] ${message}`;
 
-  const div = document.createElement("div");
+  const div =
+    document.createElement("div");
 
   if (type) {
     div.className = type;
@@ -260,41 +378,66 @@ function log(message, type = "") {
 
   logEl.appendChild(div);
 
-  logEl.scrollTop = logEl.scrollHeight;
+  logEl.scrollTop =
+    logEl.scrollHeight;
 
   console.log(line);
+
 }
 
 
+/* =========================================================
+   STAGE MARKER
+   ========================================================= */
+
 function setStage(stage) {
 
-  localStorage.setItem(STAGE_KEY, stage);
+  localStorage.setItem(
+    STAGE_KEY,
+    stage
+  );
+
   localStorage.setItem(
     TIME_KEY,
     new Date().toISOString()
   );
 
-  log(`Stage → ${stage}`, "info");
+  log(
+    `Stage → ${stage}`,
+    "info"
+  );
+
 }
 
 
 function clearStage() {
 
-  localStorage.removeItem(STAGE_KEY);
-  localStorage.removeItem(TIME_KEY);
+  localStorage.removeItem(
+    STAGE_KEY
+  );
+
+  localStorage.removeItem(
+    TIME_KEY
+  );
 
 }
 
 
 function checkPreviousStage() {
 
-  const stage = localStorage.getItem(STAGE_KEY);
+  const stage =
+    localStorage.getItem(
+      STAGE_KEY
+    );
 
   if (!stage) {
     return;
   }
 
-  const time = localStorage.getItem(TIME_KEY);
+  const time =
+    localStorage.getItem(
+      TIME_KEY
+    );
 
   let age = "";
 
@@ -302,22 +445,28 @@ function checkPreviousStage() {
 
     const diff =
       Math.round(
-        (Date.now() - new Date(time).getTime()) / 1000
+        (
+          Date.now() -
+          new Date(time).getTime()
+        ) / 1000
       );
 
-    age = `${diff} 秒前`;
+    age =
+      `${diff} 秒前`;
 
   }
 
   log(
-    `⚠️ 偵測到上一輪未完成：${stage}${age ? " · " + age : ""}`,
+    `⚠️ 偵測到上一輪未完成：${stage}` +
+    `${age ? " · " + age : ""}`,
     "warn"
   );
 
   initStatus.textContent =
     `上一輪初始化沒有正常完成：${stage}\n` +
     `${age ? "時間：" + age : ""}\n\n` +
-    `如果 Safari 是整頁重新載入，這通常不是普通 JS exception。`;
+    `如果 Safari 是整頁重新載入，` +
+    `通常不是普通 JavaScript exception。`;
 
 }
 
@@ -329,7 +478,7 @@ function checkPreviousStage() {
 function printDeviceInfo() {
 
   log(
-    `iOS/Safari UA：${navigator.userAgent}`,
+    `User-Agent：${navigator.userAgent}`,
     "info"
   );
 
@@ -358,7 +507,7 @@ function printDeviceInfo() {
 
 
 /* =========================================================
-   LOAD MEDIAPIPE
+   MEDIAPIPE
    ========================================================= */
 
 async function loadMediaPipe() {
@@ -367,7 +516,9 @@ async function loadMediaPipe() {
     return;
   }
 
-  setStage("LOAD_MEDIAPIPE");
+  setStage(
+    "LOAD_MEDIAPIPE"
+  );
 
   log(
     `載入 @mediapipe/tasks-genai@${MP_VERSION} ...`
@@ -375,21 +526,26 @@ async function loadMediaPipe() {
 
   try {
 
-    const module = await import(
-      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`
-    );
+    const module =
+      await import(
+        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/+esm`
+      );
 
-    FilesetResolver = module.FilesetResolver;
-    LlmInference = module.LlmInference;
+    FilesetResolver =
+      module.FilesetResolver;
+
+    LlmInference =
+      module.LlmInference;
 
     log(
       "MediaPipe JS module ✓",
       "ok"
     );
 
-    genai = await FilesetResolver.forGenAiTasks(
-      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`
-    );
+    genai =
+      await FilesetResolver.forGenAiTasks(
+        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@${MP_VERSION}/wasm`
+      );
 
     log(
       "MediaPipe WASM fileset ✓",
@@ -406,6 +562,7 @@ async function loadMediaPipe() {
     );
 
     throw err;
+
   }
 
 }
@@ -417,7 +574,10 @@ async function loadMediaPipe() {
 
 async function getOPFS() {
 
-  if (!navigator.storage?.getDirectory) {
+  if (
+    !navigator.storage ||
+    !navigator.storage.getDirectory
+  ) {
 
     throw new Error(
       "此 Safari 不支援 OPFS getDirectory()"
@@ -425,18 +585,23 @@ async function getOPFS() {
 
   }
 
-  return await navigator.storage.getDirectory();
+  return await navigator
+    .storage
+    .getDirectory();
 
 }
 
 
 async function fileExists(name) {
 
-  const root = await getOPFS();
+  const root =
+    await getOPFS();
 
   try {
 
-    await root.getFileHandle(name);
+    await root.getFileHandle(
+      name
+    );
 
     return true;
 
@@ -451,10 +616,13 @@ async function fileExists(name) {
 
 async function getOPFSFile(name) {
 
-  const root = await getOPFS();
+  const root =
+    await getOPFS();
 
   const handle =
-    await root.getFileHandle(name);
+    await root.getFileHandle(
+      name
+    );
 
   return await handle.getFile();
 
@@ -470,14 +638,26 @@ async function refreshModelStatus() {
   try {
 
     const qwen =
-      await fileExists(QWEN_FILE);
+      await fileExists(
+        QWEN_FILE
+      );
 
     const gemma =
-      await fileExists(GEMMA_FILE);
+      await fileExists(
+        GEMMA_FILE
+      );
 
     modelStatus.textContent =
-      `Qwen 0.5B：${qwen ? "✓ 已下載" : "未下載"}\n` +
-      `Gemma 3 1B：${gemma ? "✓ 已下載" : "未下載"}`;
+      `Qwen 0.5B：${
+        qwen
+          ? "✓ 已下載"
+          : "未下載"
+      }\n` +
+      `Gemma 3 1B：${
+        gemma
+          ? "✓ 已下載"
+          : "未下載"
+      }`;
 
   } catch (err) {
 
@@ -490,34 +670,129 @@ async function refreshModelStatus() {
 
 
 /* =========================================================
+   HF TOKEN
+   ========================================================= */
+
+function getHFToken() {
+
+  const token =
+    hfTokenInput.value.trim();
+
+  if (!token) {
+
+    throw new Error(
+      "Gemma 需要 Hugging Face Access Token"
+    );
+
+  }
+
+  if (
+    !token.startsWith("hf_")
+  ) {
+
+    log(
+      "⚠️ Token 看起來不是 hf_ 開頭，仍會嘗試使用。",
+      "warn"
+    );
+
+  }
+
+  return token;
+
+}
+
+
+/* =========================================================
    STREAMING DOWNLOAD
    ========================================================= */
 
 async function downloadModel(
   url,
   filename,
-  label
+  label,
+  token = null
 ) {
 
-  const root = await getOPFS();
-
-  log(`開始下載 ${label}`, "info");
+  const root =
+    await getOPFS();
 
   log(
-    "下載方式：HTTP stream → OPFS，避免 chunks[] / Blob"
+    `開始下載 ${label}`,
+    "info"
   );
 
-  const response = await fetch(url, {
-    cache: "no-store"
-  });
+  log(
+    "HTTP stream → OPFS"
+  );
 
-  if (!response.ok) {
+  const headers = {};
 
-    throw new Error(
-      `HTTP ${response.status} ${response.statusText}`
+  if (token) {
+
+    headers.Authorization =
+      `Bearer ${token}`;
+
+    log(
+      "Gemma Authorization header 已設定"
     );
 
   }
+
+  const response =
+    await fetch(
+      url,
+      {
+        method: "GET",
+        headers,
+        cache: "no-store",
+        redirect: "follow"
+      }
+    );
+
+
+  /* =======================================================
+     HTTP ERROR
+     ======================================================= */
+
+  if (!response.ok) {
+
+    let body = "";
+
+    try {
+      body =
+        await response.text();
+    } catch {}
+
+    if (
+      response.status === 401
+    ) {
+
+      throw new Error(
+        "HTTP 401：Hugging Face Token 無效，" +
+        "或尚未取得該 Gemma 模型的 Access。"
+      );
+
+    }
+
+    if (
+      response.status === 403
+    ) {
+
+      throw new Error(
+        "HTTP 403：Hugging Face 拒絕存取。" +
+        "請確認你已在模型頁面接受 Gemma 授權條款，" +
+        "並且 Token 有讀取權限。"
+      );
+
+    }
+
+    throw new Error(
+      `HTTP ${response.status} ${response.statusText}\n` +
+      body.slice(0, 500)
+    );
+
+  }
+
 
   if (!response.body) {
 
@@ -527,82 +802,111 @@ async function downloadModel(
 
   }
 
+
   const total =
     Number(
-      response.headers.get("content-length") || 0
+      response.headers
+        .get("content-length") || 0
     );
+
 
   if (total) {
 
     log(
-      `Content-Length：${(
-        total / 1024 / 1024
-      ).toFixed(1)} MB`
+      `Content-Length：${
+        (total / 1024 / 1024)
+          .toFixed(1)
+      } MB`
     );
 
   }
 
+
   const handle =
     await root.getFileHandle(
       filename,
-      { create: true }
+      {
+        create: true
+      }
     );
+
 
   const writable =
     await handle.createWritable();
 
+
   const reader =
     response.body.getReader();
 
-  let received = 0;
 
+  let received = 0;
   let lastReport = 0;
+
 
   try {
 
     while (true) {
 
-      const { value, done } =
+      const {
+        value,
+        done
+      } =
         await reader.read();
+
 
       if (done) {
         break;
       }
 
+
       if (value) {
 
-        await writable.write(value);
+        await writable.write(
+          value
+        );
 
-        received += value.byteLength;
+        received +=
+          value.byteLength;
 
       }
 
-      const nowMs = Date.now();
+
+      const nowMs =
+        Date.now();
+
 
       if (
         nowMs - lastReport > 1000
       ) {
 
-        lastReport = nowMs;
+        lastReport =
+          nowMs;
+
+
+        const mb =
+          (
+            received /
+            1024 /
+            1024
+          ).toFixed(1);
+
 
         if (total) {
 
           const pct =
-            received / total * 100;
+            received /
+            total *
+            100;
 
           log(
             `${label}：${pct.toFixed(1)}% ` +
-            `(${(
-              received / 1024 / 1024
-            ).toFixed(1)} MB)`
+            `(${mb} MB)`
           );
 
         } else {
 
           log(
-            `${label}：${(
-              received / 1024 / 1024
-            ).toFixed(1)} MB`
+            `${label}：${mb} MB`
           );
 
         }
@@ -611,7 +915,9 @@ async function downloadModel(
 
     }
 
+
     await writable.close();
+
 
   } catch (err) {
 
@@ -623,12 +929,18 @@ async function downloadModel(
 
   }
 
+
   log(
-    `${label} 下載完成：${(
-      received / 1024 / 1024
-    ).toFixed(1)} MB`,
+    `${label} 下載完成：${
+      (
+        received /
+        1024 /
+        1024
+      ).toFixed(1)
+    } MB`,
     "ok"
   );
+
 
   await refreshModelStatus();
 
@@ -639,24 +951,25 @@ async function downloadModel(
    DELETE
    ========================================================= */
 
-async function deleteFileIfExists(name) {
+async function deleteFileIfExists(
+  name
+) {
 
-  const root = await getOPFS();
+  const root =
+    await getOPFS();
 
   try {
 
-    await root.removeEntry(name);
+    await root.removeEntry(
+      name
+    );
 
     log(
       `已刪除 ${name}`,
       "ok"
     );
 
-  } catch {
-
-    // 不存在就忽略
-
-  }
+  } catch {}
 
 }
 
@@ -673,14 +986,15 @@ async function deleteAllModels() {
 
       currentLLM = null;
 
-      log(
-        "已嘗試關閉目前 LLM"
-      );
-
     }
 
-    await deleteFileIfExists(QWEN_FILE);
-    await deleteFileIfExists(GEMMA_FILE);
+    await deleteFileIfExists(
+      QWEN_FILE
+    );
+
+    await deleteFileIfExists(
+      GEMMA_FILE
+    );
 
     await refreshModelStatus();
 
@@ -707,10 +1021,13 @@ async function deleteAllModels() {
 
 async function testWebGPU() {
 
-  setStage("WEBGPU_DEVICE_TEST");
+  setStage(
+    "WEBGPU_DEVICE_TEST"
+  );
 
   gpuStatus.textContent =
     "正在測試 WebGPU Adapter / Device ...";
+
 
   try {
 
@@ -722,15 +1039,19 @@ async function testWebGPU() {
 
     }
 
+
     log(
       "navigator.gpu ✓",
       "ok"
     );
 
+
     const adapter =
       await navigator.gpu.requestAdapter({
-        powerPreference: "high-performance"
+        powerPreference:
+          "high-performance"
       });
+
 
     if (!adapter) {
 
@@ -740,16 +1061,20 @@ async function testWebGPU() {
 
     }
 
+
     log(
       "WebGPU Adapter ✓",
       "ok"
     );
 
+
     log(
       `maxStorageBufferBindingSize：${
-        adapter.limits.maxStorageBufferBindingSize
+        adapter.limits
+          .maxStorageBufferBindingSize
       }`
     );
+
 
     log(
       `maxBufferSize：${
@@ -757,18 +1082,21 @@ async function testWebGPU() {
       }`
     );
 
+
     /*
-     * 不呼叫 requestAdapterInfo()
-     *
-     * Safari 某些版本可能不支援 / 不完整支援。
+     * 故意不呼叫 requestAdapterInfo()
+     * 避免 Safari 相容性問題。
      */
+
 
     log(
       "開始 requestDevice() ..."
     );
 
+
     const device =
       await adapter.requestDevice();
+
 
     if (!device) {
 
@@ -778,30 +1106,31 @@ async function testWebGPU() {
 
     }
 
+
     log(
       "WebGPU Device ✓",
       "ok"
     );
 
-    /*
-     * 建立一個非常小的 buffer。
-     * 這不是 LLM，只是確認 device 能真的建立 GPU buffer。
-     */
 
     const buffer =
       device.createBuffer({
         size: 4096,
+
         usage:
           GPUBufferUsage.STORAGE |
           GPUBufferUsage.COPY_DST
       });
 
+
     buffer.destroy();
+
 
     log(
       "GPU buffer 建立 / destroy ✓",
       "ok"
     );
+
 
     gpuStatus.textContent =
       "✓ WebGPU Adapter\n" +
@@ -809,12 +1138,15 @@ async function testWebGPU() {
       "✓ GPU Buffer\n\n" +
       "基本 WebGPU device 測試通過。";
 
+
     clearStage();
+
 
   } catch (err) {
 
     gpuStatus.textContent =
       `✗ WebGPU Device 測試失敗\n\n${err}`;
+
 
     log(
       `WebGPU Device FAIL：${err?.stack || err}`,
@@ -827,7 +1159,7 @@ async function testWebGPU() {
 
 
 /* =========================================================
-   COMMON LLM INITIALIZATION
+   LOCAL MODEL INITIALIZATION
    ========================================================= */
 
 async function initLocalModel(
@@ -835,14 +1167,14 @@ async function initLocalModel(
   label
 ) {
 
-  if (!LlmInference || !genai) {
+  await loadMediaPipe();
 
-    await loadMediaPipe();
-
-  }
 
   const exists =
-    await fileExists(filename);
+    await fileExists(
+      filename
+    );
+
 
   if (!exists) {
 
@@ -852,46 +1184,47 @@ async function initLocalModel(
 
   }
 
+
   const file =
-    await getOPFSFile(filename);
+    await getOPFSFile(
+      filename
+    );
+
 
   log(
-    `${label} 檔案：${(
-      file.size / 1024 / 1024
-    ).toFixed(1)} MB`
+    `${label} 檔案：${
+      (
+        file.size /
+        1024 /
+        1024
+      ).toFixed(1)
+    } MB`
   );
+
 
   log(
     `${label} 建立 ReadableStream ...`
   );
 
-  /*
-   * 這裡使用 MediaPipe 官方範例採用的方式：
-   *
-   * file.stream().getReader()
-   *
-   * 不做 arrayBuffer()
-   * 不做 Blob
-   * 不做 chunks[]
-   *
-   * 官方 JS sample 目前也是以 modelAssetBuffer
-   * 接 ReadableStream reader。
-   */
 
   const reader =
     file.stream().getReader();
+
 
   setStage(
     `${label} · createFromOptions`
   );
 
+
   log(
-    `${label} 開始 LlmInference.createFromOptions() ...`,
+    `${label} 開始 GPU LlmInference 初始化 ...`,
     "warn"
   );
 
+
   const start =
     performance.now();
+
 
   try {
 
@@ -904,14 +1237,6 @@ async function initLocalModel(
             delegate: "GPU"
           },
 
-          /*
-           * 保守設定。
-           *
-           * 注意：
-           * maxTokens 不一定能降低模型初始化階段
-           * 的 GPU / WASM 資源需求。
-           */
-
           maxTokens: 64,
 
           topK: 1,
@@ -922,29 +1247,31 @@ async function initLocalModel(
         }
       );
 
+
     const seconds =
       (
-        performance.now() - start
+        performance.now() -
+        start
       ) / 1000;
+
 
     clearStage();
 
+
     log(
-      `${label} 初始化成功 ✓ (${seconds.toFixed(1)} 秒)`,
+      `${label} 初始化成功 ✓ ` +
+      `(${seconds.toFixed(1)} 秒)`,
       "ok"
     );
 
+
     return llm;
+
 
   } catch (err) {
 
-    /*
-     * 如果 Safari 是整個 WebContent process
-     * 被終止，這個 catch 根本不會執行。
-     */
-
     log(
-      `${label} JavaScript exception：${err?.stack || err}`,
+      `${label} JS exception：${err?.stack || err}`,
       "bad"
     );
 
@@ -956,27 +1283,28 @@ async function initLocalModel(
 
 
 /* =========================================================
-   QWEN
+   QWEN TEST
    ========================================================= */
 
 async function testQwen() {
 
   initStatus.textContent =
-    "Qwen 0.5B：初始化中...\n" +
-    "如果 Safari 整頁重載，代表 process 在這裡被終止。";
+    "Qwen 0.5B：GPU 初始化中...\n\n" +
+    "如果 Safari 整頁重載，重新進入後看上一輪 Stage。";
+
 
   log(
     "=============================="
   );
+
 
   log(
     "QWEN GPU TEST START",
     "info"
   );
 
-  try {
 
-    await loadMediaPipe();
+  try {
 
     if (currentLLM) {
 
@@ -988,31 +1316,39 @@ async function testQwen() {
 
     }
 
+
     const llm =
       await initLocalModel(
         QWEN_FILE,
         "QWEN"
       );
 
-    currentLLM = llm;
+
+    currentLLM =
+      llm;
+
 
     initStatus.textContent =
       "✓ Qwen 0.5B GPU 初始化成功\n\n" +
-      "這表示：\n" +
-      "• OPFS ✓\n" +
-      "• MediaPipe WASM ✓\n" +
-      "• WebGPU Device ✓\n" +
-      "• Qwen GPU model build ✓";
+      "OPFS ✓\n" +
+      "MediaPipe WASM ✓\n" +
+      "WebGPU Device ✓\n" +
+      "Qwen GPU model build ✓";
+
 
     log(
       "QWEN TEST PASS ✓",
       "ok"
     );
 
+
   } catch (err) {
 
     initStatus.textContent =
-      `Qwen 初始化失敗：\n${err?.message || err}`;
+      `Qwen 初始化失敗：\n${
+        err?.message || err
+      }`;
+
 
     log(
       `QWEN TEST FAIL：${err?.stack || err}`,
@@ -1025,27 +1361,28 @@ async function testQwen() {
 
 
 /* =========================================================
-   GEMMA
+   GEMMA TEST
    ========================================================= */
 
 async function testGemma() {
 
   initStatus.textContent =
-    "Gemma 3 1B：初始化中...\n" +
+    "Gemma 3 1B：GPU 初始化中...\n\n" +
     "這是 Qwen 的 GPU 對照測試。";
+
 
   log(
     "=============================="
   );
+
 
   log(
     "GEMMA GPU TEST START",
     "info"
   );
 
-  try {
 
-    await loadMediaPipe();
+  try {
 
     if (currentLLM) {
 
@@ -1057,31 +1394,39 @@ async function testGemma() {
 
     }
 
+
     const llm =
       await initLocalModel(
         GEMMA_FILE,
         "GEMMA"
       );
 
-    currentLLM = llm;
+
+    currentLLM =
+      llm;
+
 
     initStatus.textContent =
       "✓ Gemma 3 1B GPU 初始化成功\n\n" +
-      "這表示：\n" +
-      "• OPFS ✓\n" +
-      "• MediaPipe WASM ✓\n" +
-      "• WebGPU Device ✓\n" +
-      "• Gemma GPU model build ✓";
+      "OPFS ✓\n" +
+      "MediaPipe WASM ✓\n" +
+      "WebGPU Device ✓\n" +
+      "Gemma GPU model build ✓";
+
 
     log(
       "GEMMA TEST PASS ✓",
       "ok"
     );
 
+
   } catch (err) {
 
     initStatus.textContent =
-      `Gemma 初始化失敗：\n${err?.message || err}`;
+      `Gemma 初始化失敗：\n${
+        err?.message || err
+      }`;
+
 
     log(
       `GEMMA TEST FAIL：${err?.stack || err}`,
@@ -1112,7 +1457,10 @@ document
 
     try {
 
-      setStage("DOWNLOAD_QWEN");
+      setStage(
+        "DOWNLOAD_QWEN"
+      );
+
 
       await downloadModel(
         QWEN_URL,
@@ -1120,7 +1468,9 @@ document
         "Qwen 0.5B"
       );
 
+
       clearStage();
+
 
     } catch (err) {
 
@@ -1142,15 +1492,25 @@ document
 
     try {
 
-      setStage("DOWNLOAD_GEMMA");
+      const token =
+        getHFToken();
+
+
+      setStage(
+        "DOWNLOAD_GEMMA"
+      );
+
 
       await downloadModel(
         GEMMA_URL,
         GEMMA_FILE,
-        "Gemma 3 1B"
+        "Gemma 3 1B",
+        token
       );
 
+
       clearStage();
+
 
     } catch (err) {
 
@@ -1204,12 +1564,17 @@ printDeviceInfo();
 refreshModelStatus();
 
 log(
-  "V10 ready",
+  "V10.1 ready ✓",
   "ok"
 );
 
 log(
-  "先按 ① WebGPU Device，再分別測 Qwen / Gemma。",
+  "Gemma Token 只用於 Hugging Face 下載。",
+  "info"
+);
+
+log(
+  "建議先測 WebGPU，再下載兩個模型。",
   "info"
 );
 
